@@ -215,39 +215,39 @@ Replace each placeholder with: ![Caption](Figures/filename.png)
 -->
 
 ### Figure 1 — Architecture Block Diagram
-```
-(Figures/figure1_architecture.png)
-```
+
+![Architecture Block Diagram](Figures/figure1_architecture.png)
+
 *Overall dual-branch architecture: spatial Riemannian-geometry branch (top) and temporal Mamba state-space branch (bottom), fused into a classification head.*
 
 ### Figure 2 — LOSO Accuracy Comparison
-```
-(Figures/figure2_results.png)
-```
+
+![LOSO Accuracy Comparison](Figures/figure2_results.png)
+
 *Mean LOSO accuracy: SpatioMamba (55.53%) vs. BaselineCNN (52.14%), with significance bracket (p < 0.01).*
 
 ### Figure 3 — Training & Validation Learning Curves
-```
-(Figures/figure3_learning_curves.png)
-```
+
+![Learning Curves](Figures/figure3_learning_curves.png)
+
 *Representative-fold loss and accuracy curves, annotated with the early-stopping checkpoint.*
 
 ### Figure 4 — Aggregate Confusion Matrix
-```
-(Figures/figure4_confusion_matrix.png)
-```
+
+![Confusion Matrix](Figures/figure4_confusion_matrix.png)
+
 *Aggregate True Memory vs. False Memory classification counts across all 29 LOSO folds.*
 
 ### Figure 5 — Subject-wise Performance Distribution
-```
-(Figures/figure5_distribution.png)
-```
+
+![Performance Distribution](Figures/figure5_distribution.png)
+
 *Violin + swarm plot of per-subject LOSO fold accuracies for both models.*
 
 ### Figure 6 — ROC Curve
-```
-(Figures/figure6_roc_curve.png)
-```
+
+![ROC Curve](Figures/figure6_roc_curve.png)
+
 *Receiver Operating Characteristic curves and AUC for SpatioMamba vs. BaselineCNN.*
 
 ---
