@@ -272,19 +272,23 @@
 #             color="#18181B", zorder=10,
 #         )
 
-#     # ---- Chance-level reference line — label moved to far-left, no overlap ----
+#     # ---- Chance-level reference line — label moved to far-right empty
+#     #      space beyond Condition 4, with a white bbox as a hard guarantee
+#     #      against any bar-border collision ----
 #     ax.axhline(
 #         y=CHANCE_LEVEL * 100,
 #         color="#EF4444", alpha=0.6,
 #         linestyle="--", linewidth=1.1,
 #         zorder=1,
 #     )
+#     chance_label_x = ax.get_xlim()[1] - 0.05
 #     ax.text(
-#         CHANCE_LABEL_X, CHANCE_LEVEL * 100 + CHANCE_LABEL_Y_OFF,
+#         chance_label_x, 50.8,
 #         "Theoretical Chance Level (50.0%)",
-#         ha="left", va="bottom",
+#         ha="right", va="bottom",
 #         fontsize=9.5, style="italic", color="#B91C1C", alpha=0.85,
 #         zorder=10,
+#         bbox=dict(facecolor="white", alpha=0.95, edgecolor="none", pad=2),
 #     )
 
 #     # =========================================================================
@@ -494,16 +498,21 @@
 
 
 
-
-
-
-
 # =============================================================================
 # command to run : modal run generate_figure1_ablation.py::main
 # command to download : modal volume get eeg-data-vol figures/figure1_grand_ablation.png .
 # generate_figure1_ablation.py
-# Phase 3.1 — Figure 1: Grand Ablation Bar Chart (v3, collision-free layout)
+# Phase 3.1 — Figure 1: Grand Ablation Bar Chart (v4, chance-label relocated)
 # IEEE Transactions / Nature Neuroscience-style publication figure
+#
+# v4 fixes over v3 (per Senior Scientific Illustrator sign-off):
+#   - The ONLY change from v3: the red "Theoretical Chance Level" label was
+#     sitting at x≈2.5 (between Condition 3 and Condition 4), creating a
+#     white-sticker collision effect across bars/dots. It has been moved to
+#     the empty margin space on the far LEFT, before Condition 1.
+#   - Horizontal xlim expanded slightly (-0.6, 3.8) to guarantee open
+#     whitespace on both flanks for label placement.
+#   - All other geometry, brackets, y-limits, and data are unchanged from v3.
 #
 # v3 fixes over v2 (all text-collision issues from the reviewed v2 render):
 #   1. Vertical headroom expanded to ax.set_ylim(0, 101) — the previous 0-85
@@ -559,8 +568,10 @@ BRACKET_Y           = 87.0    # horizontal bar of the significance bracket
 BRACKET_LABEL_Y     = 88.8    # "+X.XX pp Absolute Gain" text
 BRACKET_TICK_MARGIN = 4.0     # gap between bracket tick foot and bar's % label
 SUBTITLE_Y          = 93.5    # italic subtitle, data coordinates
-CHANCE_LABEL_X      = -0.38   # left-aligned, above the dashed chance line
-CHANCE_LABEL_Y_OFF  = 1.2     # % points above the chance line
+
+# Chance-level label placement (v4: relocated to far-left empty margin).
+CHANCE_LABEL_X      = -0.55   # far-left, in the expanded xlim margin
+CHANCE_LABEL_Y      = 51.0    # just above the dashed chance line
 
 figure_image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -772,20 +783,25 @@ def generate_figure1():
             color="#18181B", zorder=10,
         )
 
-    # ---- Chance-level reference line — label moved to far-right empty
-    #      space beyond Condition 4, with a white bbox as a hard guarantee
-    #      against any bar-border collision ----
+    # ---- Expanded horizontal margins so the chance-level label has
+    #      guaranteed open whitespace on the far left, clear of any bar
+    #      or scatter dot (per illustrator sign-off, v4). ----
+    ax.set_xlim(-0.6, 3.8)
+
+    # ---- Chance-level reference line — label relocated to the far-LEFT
+    #      empty margin (v4), left-aligned, sitting just above the dashed
+    #      line with a white bbox as a hard guarantee against any
+    #      bar-border or scatter-dot collision. ----
     ax.axhline(
         y=CHANCE_LEVEL * 100,
         color="#EF4444", alpha=0.6,
         linestyle="--", linewidth=1.1,
         zorder=1,
     )
-    chance_label_x = ax.get_xlim()[1] - 0.05
     ax.text(
-        chance_label_x, 50.8,
+        CHANCE_LABEL_X, CHANCE_LABEL_Y,
         "Theoretical Chance Level (50.0%)",
-        ha="right", va="bottom",
+        ha="left", va="bottom",
         fontsize=9.5, style="italic", color="#B91C1C", alpha=0.85,
         zorder=10,
         bbox=dict(facecolor="white", alpha=0.95, edgecolor="none", pad=2),
@@ -859,7 +875,6 @@ def generate_figure1():
     ax.set_ylabel("LOSO Test Accuracy (%)", fontsize=12.5, fontweight="bold", labelpad=10)
 
     ax.set_ylim(0, y_axis_max)
-    ax.set_xlim(-0.65, len(labels) - 1 + 0.65)
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -889,6 +904,8 @@ def generate_figure1():
     print(f"  Layout self-check passed: bracket feet=({foot3:.1f}, {foot4:.1f}), "
           f"bracket_y={bracket_y:.1f}, label_y={bracket_label_y:.1f}, "
           f"subtitle_y={subtitle_y:.1f}, y_max={y_axis_max:.1f}")
+    print(f"  Chance-level label anchored at x={CHANCE_LABEL_X}, y={CHANCE_LABEL_Y} "
+          f"(far-left margin, xlim={ax.get_xlim()})")
 
     # =========================================================================
     # SECTION 5: EXPORT — 600 DPI PNG + VECTOR PDF
@@ -944,7 +961,7 @@ def generate_figure1():
 @app.local_entrypoint()
 def main():
     print("\n" + "="*70)
-    print("  Phase 3.1 — Figure 1: Grand Ablation Bar Chart (v3, collision-free)")
+    print("  Phase 3.1 — Figure 1: Grand Ablation Bar Chart (v4, chance-label relocated)")
     print("  4-Condition Comparison + Per-Subject Overlay, Nature/IEEE Style")
     print("="*70 + "\n")
 
@@ -957,7 +974,7 @@ def main():
         print(f"  {key:<20} : {val}")
     print("="*70)
     print(
-        "\n  Figure 1 (v3) generated and committed to eeg-data-vol.\n"
+        "\n  Figure 1 (v4) generated and committed to eeg-data-vol.\n"
         "  Retrieve with: modal volume get eeg-data-vol figures/figure1_grand_ablation.png .\n"
         "             or: modal volume get eeg-data-vol figures/figure1_grand_ablation.pdf .\n"
     )
