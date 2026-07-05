@@ -408,7 +408,7 @@ def generate_figure3():
     log.info("\nRendering 3-panel static publication figure (Matplotlib)...")
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 11, "axes.linewidth": 0.8})
 
-    fig = plt.figure(figsize=(22, 8))
+    fig = plt.figure(figsize=(23, 8.5))
     gs = fig.add_gridspec(1, 4, width_ratios=[1, 1, 1, 0.04])
 
     def _style_3d_axes(ax):
@@ -463,7 +463,7 @@ def generate_figure3():
         f"A. Best-Responder Example: sub-{best_subject}\n"
         f"(rank 1/{len(accs)}, held-out acc={best_acc*100:.1f}%; "
         f"group mean={group_mean*100:.1f}%±{group_std*100:.1f}%)",
-        fontsize=11, fontweight="bold",
+        fontsize=11, fontweight="bold", pad=26,
     )
     legend_a_elems = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor=CLASS_COLORS[0], markeredgecolor="dimgrey", markersize=9, label="False Memory (correct)"),
@@ -472,7 +472,7 @@ def generate_figure3():
         Line2D([0], [0], marker="o", color="w", markerfacecolor="lightgrey", markersize=9, label="D_cal (context only)"),
     ]
     ax_a.legend(
-        handles=legend_a_elems, loc="upper left", bbox_to_anchor=(0.0, 1.05),
+        handles=legend_a_elems, loc="upper left", bbox_to_anchor=(0.0, 0.84),
         fontsize=7.5, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
     )
 
@@ -504,10 +504,10 @@ def generate_figure3():
     ax_b.set_title(
         f"B. Multi-Subject (N={N_TOTAL_POINTS}), Colored by Class\n"
         f"(label-informed axes; centroid gap={centroid_gap:.2f})",
-        fontsize=11, fontweight="bold",
+        fontsize=11, fontweight="bold", pad=26,
     )
     ax_b.legend(
-        loc="upper left", bbox_to_anchor=(0.0, 1.05),
+        loc="upper left", bbox_to_anchor=(0.0, 0.84),
         fontsize=8, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
     )
 
@@ -545,7 +545,7 @@ def generate_figure3():
         "B/C: Label-informed LDA+PCA → t-SNE axes on pooled pre-calibration features, demonstrating geometry tracks subject identity prior to calibration.",
         ha="center", va="top", fontsize=9.5, fontweight="normal", color="#000000", wrap=True,
     )
-    fig.subplots_adjust(left=0.03, right=0.92, bottom=0.14, top=0.88, wspace=0.06)
+    fig.subplots_adjust(left=0.02, right=0.93, bottom=0.14, top=0.85, wspace=0.02)
 
     log.info(f"Saving 3-panel PNG (600 DPI) -> {PNG_MAIN}")
     fig.savefig(PNG_MAIN, dpi=600, bbox_inches="tight", facecolor="white")
@@ -584,14 +584,14 @@ def generate_figure3():
         f"Best-Responder Single-Subject Manifold: sub-{best_subject}\n"
         f"Held-out LOSO accuracy = {best_acc*100:.2f}% (rank 1/{len(accs)}; "
         f"group mean = {group_mean*100:.2f}%±{group_std*100:.2f}%)",
-        fontsize=12, fontweight="bold",
+        fontsize=12, fontweight="bold", pad=26,
     )
     fig_a.text(0.5, 0.01,
         "Axes: PCA fit on the other 28 subjects only (no leakage); t-SNE used solely for 3D layout. "
         "Marker shape reflects real held-out prediction outcomes. Best-case example — not representative of the population mean.",
         ha="center", fontsize=9.5, fontweight="normal", color="#000000")
     ax_a2.legend(
-        loc="upper left", bbox_to_anchor=(0.0, 1.05),
+        loc="upper left", bbox_to_anchor=(0.0, 0.84),
         fontsize=8, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
     )
     fig_a.tight_layout()
