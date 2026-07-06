@@ -407,15 +407,27 @@ def generate_figure4():
         ax.set_title(title, fontsize=11.5, fontweight="bold", pad=14)
 
         if annotate_idx is not None:
+            # SURGICAL FIX: dynamic radial offset (in points, not data units) so
+            # the label always falls outside the electrode dot regardless of
+            # which quadrant it sits in, plus a semi-transparent white halo so
+            # text stays legible over dark contour fill, plus a clean
+            # arrow ("->") that terminates just short of the dot instead of
+            # passing through the text.
             for i in annotate_idx:
+                dx = 16 if pos_x[i] >= 0 else -16
+                dy = 16 if pos_y[i] >= 0 else -16
                 ax.annotate(
                     ch_names[i],
                     xy=(pos_x[i], pos_y[i]),
-                    xytext=(pos_x[i] + 0.28 * np.sign(pos_x[i] if pos_x[i] != 0 else 1),
-                            pos_y[i] + 0.22),
-                    fontsize=9.5, fontweight="bold", color="black", zorder=7,
-                    arrowprops=dict(arrowstyle="-", color="black", lw=0.8),
-                    ha="center",
+                    xytext=(dx, dy),
+                    textcoords="offset points",
+                    fontsize=9.5, fontweight="bold", color="black", zorder=9,
+                    ha="center", va="center",
+                    bbox=dict(boxstyle="round,pad=0.22", fc="white", ec="none", alpha=0.78),
+                    arrowprops=dict(
+                        arrowstyle="->", color="black", lw=0.9,
+                        shrinkA=2, shrinkB=6, zorder=8,
+                    ),
                 )
         return im
 
@@ -625,26 +637,27 @@ def generate_figure4():
         camera=dict(eye=dict(x=1.4, y=1.4, z=0.9)),
         aspectmode="cube",
     )
+    # SURGICAL FIX: fold the main title and the disclosure subtitle into a
+    # single HTML title block (rather than a title + separately-positioned
+    # annotation) so header and subtitle share one coordinate system with
+    # zero orphaned vertical gap, guaranteed centered alignment, and tight,
+    # consistent line spacing.
+    title_html = (
+        "<b>Figure 4 (Interactive): 3D Cortical Scalp Topography and Discriminative Electrode Map</b><br>"
+        "<span style='font-size:11.5px; color:#334155; font-weight:normal;'>"
+        f"Reconstruction path: {used_path} | Channel-name source: {name_source}<br>"
+        "3D electrode positions are a spherical projection of the 10-10 topomap layout "
+        "(not a digitized montage). Drag to rotate each panel; hover markers for values."
+        "</span>"
+    )
+
     fig3d.update_layout(
         scene=scene_common, scene2=scene_common, scene3=scene_common,
         title=dict(
-            text="Figure 4 (Interactive): 3D Cortical Scalp Topography and Discriminative Electrode Map",
-            x=0.5, xanchor="center", y=0.98, yanchor="top", font=dict(size=18),
+            text=title_html,
+            x=0.5, xanchor="center", y=0.96, yanchor="top", font=dict(size=18),
         ),
-        annotations=[
-            dict(
-                text=(
-                    f"Reconstruction path: {used_path} | Channel-name source: {name_source}<br>"
-                    "3D electrode positions are a spherical projection of the 10-10 topomap layout "
-                    "(not a digitized montage). Drag to rotate each panel; hover markers for values."
-                ),
-                x=0.5, y=0.90, xref="paper", yref="paper",
-                xanchor="center", yanchor="top",
-                showarrow=False, font=dict(size=11, color="#333333"),
-                align="center",
-            )
-        ],
-        margin=dict(l=10, r=10, t=160, b=50),
+        margin=dict(l=10, r=10, t=140, b=50),
         height=650, width=1650,
         paper_bgcolor="white",
     )
