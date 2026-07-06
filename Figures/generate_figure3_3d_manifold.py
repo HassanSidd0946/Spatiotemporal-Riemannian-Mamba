@@ -8,7 +8,7 @@
 # modal volume get eeg-data-vol /figures/figure3a_singlesubject_manifold.png .
 # modal volume get eeg-data-vol /figures/figure3a_singlesubject_manifold.pdf .
 #
-# Phase 3.2 (v3) — Figure 3: Three-Panel Manifold Visualization
+# Phase 3.2 (v3.1) — Figure 3: Three-Panel Manifold Visualization
 #   Panel A — Best-responder single-subject manifold (unsupervised PCA axes
 #             inherited from that subject's real Condition-4 LOSO fold,
 #             t-SNE for 3D layout only; points shaped by ACTUAL stored
@@ -17,6 +17,17 @@
 #   Panel C — The SAME multi-subject coordinates, colored by SUBJECT ID
 #             (Panel B vs C together are the actual evidence for the
 #             "subject islands" diagnosis, not merely an assertion of it)
+#
+# v3.1 LAYOUT-ONLY CHANGELOG (no scientific/statistical logic touched):
+#   - Panel A & B legends moved to sit BELOW their respective 3D axes
+#     (loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=2) to
+#     permanently eliminate any collision with 3D grid lines, tick labels,
+#     or panel titles.
+#   - subplots_adjust bottom margin increased (0.20) so the below-plot
+#     legends have clear space above the figure-level footnote.
+#   - All three panel titles (A, B, C) now use identical pad=22, y=1.02
+#     baseline positioning so their top edges align on the same horizontal
+#     line regardless of title text length.
 #
 # WHY THIS VERSION EXISTS:
 #   v2 showed that a label-informed (LDA+t-SNE) embedding of pooled,
@@ -463,8 +474,10 @@ def generate_figure3():
         f"A. Best-Responder Example: sub-{best_subject}\n"
         f"(rank 1/{len(accs)}, held-out acc={best_acc*100:.1f}%; "
         f"group mean={group_mean*100:.1f}%±{group_std*100:.1f}%)",
-        fontsize=11, fontweight="bold", pad=26,
+        pad=22, y=1.02, fontsize=11, fontweight="bold",
     )
+    # ---- Legend moved BELOW the 3D axes to eliminate any collision with
+    #      grid lines, tick labels, or the title (v3.1 layout fix) ----
     legend_a_elems = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor=CLASS_COLORS[0], markeredgecolor="dimgrey", markersize=9, label="False Memory (correct)"),
         Line2D([0], [0], marker="o", color="w", markerfacecolor=CLASS_COLORS[1], markeredgecolor="dimgrey", markersize=9, label="True Memory (correct)"),
@@ -472,8 +485,8 @@ def generate_figure3():
         Line2D([0], [0], marker="o", color="w", markerfacecolor="lightgrey", markersize=9, label="D_cal (context only)"),
     ]
     ax_a.legend(
-        handles=legend_a_elems, loc="upper left", bbox_to_anchor=(0.0, 0.84),
-        fontsize=7.5, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
+        handles=legend_a_elems, loc="upper center", bbox_to_anchor=(0.5, -0.05),
+        ncol=2, fontsize=8, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
     )
 
     sep_vec_a = (X_a_plot[test_mask & (y_a_combined == 1)].mean(axis=0) -
@@ -504,10 +517,11 @@ def generate_figure3():
     ax_b.set_title(
         f"B. Multi-Subject (N={N_TOTAL_POINTS}), Colored by Class\n"
         f"(label-informed axes; centroid gap={centroid_gap:.2f})",
-        fontsize=11, fontweight="bold", pad=26,
+        pad=22, y=1.02, fontsize=11, fontweight="bold",
     )
+    # ---- Legend moved BELOW the 3D axes (v3.1 layout fix) ----
     ax_b.legend(
-        loc="upper left", bbox_to_anchor=(0.0, 0.84),
+        loc="upper center", bbox_to_anchor=(0.5, -0.05), ncol=2,
         fontsize=8, frameon=True, facecolor="white", framealpha=0.95, edgecolor="#CBD5E1",
     )
 
@@ -525,10 +539,12 @@ def generate_figure3():
     ax_c.set_xlabel("t-SNE Axis 1", labelpad=8, fontsize=10)
     ax_c.set_ylabel("t-SNE Axis 2", labelpad=8, fontsize=10)
     ax_c.set_zlabel("t-SNE Axis 3", labelpad=8, fontsize=10)
+    # ---- Title baseline leveled to match A & B exactly (pad=22, y=1.02);
+    #      strict 2-line text, clean Unicode arrow (v3.1 layout fix) ----
     ax_c.set_title(
         f"C. Same Coordinates, Colored by Subject ID\n"
-        f"({n_islands_subjects} subjects -> geometry tracks identity, not class)",
-        fontsize=11, fontweight="bold",
+        f"({n_islands_subjects} subjects \u2192 geometry tracks identity, not class)",
+        pad=22, y=1.02, fontsize=11, fontweight="bold",
     )
     cax = fig.add_subplot(gs[0, 3])
     cbar = fig.colorbar(sc, cax=cax)
@@ -545,7 +561,9 @@ def generate_figure3():
         "B/C: Label-informed LDA+PCA → t-SNE axes on pooled pre-calibration features, demonstrating geometry tracks subject identity prior to calibration.",
         ha="center", va="top", fontsize=9.5, fontweight="normal", color="#000000", wrap=True,
     )
-    fig.subplots_adjust(left=0.02, right=0.93, bottom=0.14, top=0.85, wspace=0.02)
+    # ---- Bottom margin increased (0.20) to make clean room for the
+    #      below-plot legends on Panels A & B above the footnote (v3.1) ----
+    fig.subplots_adjust(left=0.01, right=0.92, bottom=0.20, top=0.86, wspace=-0.07)
 
     log.info(f"Saving 3-panel PNG (600 DPI) -> {PNG_MAIN}")
     fig.savefig(PNG_MAIN, dpi=600, bbox_inches="tight", facecolor="white")
@@ -718,7 +736,7 @@ def generate_figure3():
         log.info(f"  [{status}] {label:<10} -> {path}  ({size_kb:.1f} KB)")
 
     log.info("\n" + "=" * 70)
-    log.info("  FIGURE 3 (v3, 3-PANEL) EXPORT COMPLETE")
+    log.info("  FIGURE 3 (v3.1, 3-PANEL, LEGEND/TITLE LAYOUT FIX) EXPORT COMPLETE")
     log.info("=" * 70)
     log.info(f"  Panel A subject       : sub-{best_subject} (best of {len(accs)}, acc={best_acc*100:.2f}%)")
     log.info(f"  Group mean accuracy   : {group_mean*100:.2f}% ± {group_std*100:.2f}%")
@@ -748,7 +766,8 @@ def generate_figure3():
 @app.local_entrypoint()
 def main():
     print("\n" + "=" * 70)
-    print("  Figure 3 (v3) — 3-Panel Manifold: Best Responder + Subject Islands")
+    print("  Figure 3 (v3.1) — 3-Panel Manifold: Best Responder + Subject Islands")
+    print("  (legend-below-plot + title-baseline-leveling layout fix)")
     print("=" * 70 + "\n")
 
     results = generate_figure3.remote()
@@ -760,6 +779,8 @@ def main():
         print(f"  {key:<28} : {val}")
     print("=" * 70)
     print(
-        "\n  Figure 3 (v3) export complete."
-        "\n  3-panel PNG/PDF + interactive HTML + standalone Panel A committed to eeg-data-vol.\n"
+        "\n  Figure 3 (v3.1) export complete."
+        "\n  3-panel PNG/PDF + interactive HTML + standalone Panel A committed to eeg-data-vol."
+        "\n  Layout fixes applied: Panel A & B legends now sit below the 3D plots (zero collision);"
+        "\n  Panel A/B/C titles now share an identical pad=22, y=1.02 baseline.\n"
     )
