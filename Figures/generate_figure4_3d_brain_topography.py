@@ -629,7 +629,7 @@ def generate_figure4():
         scene=scene_common, scene2=scene_common, scene3=scene_common,
         title=dict(
             text="Figure 4 (Interactive): 3D Cortical Scalp Topography and Discriminative Electrode Map",
-            x=0.5, xanchor="center", font=dict(size=18),
+            x=0.5, xanchor="center", y=0.98, yanchor="top", font=dict(size=18),
         ),
         annotations=[
             dict(
@@ -638,11 +638,13 @@ def generate_figure4():
                     "3D electrode positions are a spherical projection of the 10-10 topomap layout "
                     "(not a digitized montage). Drag to rotate each panel; hover markers for values."
                 ),
-                x=0.5, y=1.06, xref="paper", yref="paper",
+                x=0.5, y=0.90, xref="paper", yref="paper",
+                xanchor="center", yanchor="top",
                 showarrow=False, font=dict(size=11, color="#333333"),
+                align="center",
             )
         ],
-        margin=dict(l=10, r=10, t=110, b=10),
+        margin=dict(l=10, r=10, t=160, b=50),
         height=650, width=1650,
         paper_bgcolor="white",
     )
