@@ -58,43 +58,54 @@ def generate_figure6():
     # ------------------------------------------------------------------------
     # Pipeline stage definitions (title, subtext, face color, text color)
     # ------------------------------------------------------------------------
-    SLATE = "#F1F5F9"
-    PALE_BLUE = "#E0F2FE"
-    TEAL = "#0F766E"
+    STANDARD_FACE = "#F8FAFC"
+    STANDARD_EDGE = "#64748B"
+    TEAL = "#0D9488"
     DARK_TEXT = "#1E293B"
-    ARROW_COLOR = "#64748B"
+    ARROW_COLOR = "#0F172A"
+    SHADOW_COLOR = "#94A3B8"
     WHITE = "#FFFFFF"
 
     stages = [
         {
             "title": "Raw EEG Acquisition",
             "subtitle": "62-Channel Cognitive Task Data\n" r"($X \in \mathbb{R}^{C \times T}$)",
-            "face": SLATE,
+            "face": STANDARD_FACE,
+            "edge": STANDARD_EDGE,
             "text": DARK_TEXT,
+            "core": False,
         },
         {
             "title": "Euclidean Alignment (EA)",
             "subtitle": "Aligns covariance matrices to subject-\nspecific reference states to eliminate\ninter-subject variability",
-            "face": PALE_BLUE,
+            "face": STANDARD_FACE,
+            "edge": STANDARD_EDGE,
             "text": DARK_TEXT,
+            "core": False,
         },
         {
             "title": "Tangent Space Mapping",
             "subtitle": "Computes spatial covariance " + r"($\Sigma$)" + "\nand projects onto the Log-Euclidean\nTangent Space",
-            "face": PALE_BLUE,
+            "face": STANDARD_FACE,
+            "edge": STANDARD_EDGE,
             "text": DARK_TEXT,
+            "core": False,
         },
         {
             "title": "Condition 4: Subspace\nShrinkage Calibration",
             "subtitle": "Ledoit-Wolf regularization and feature\nscaling to rescue collapsed subject\nmanifolds",
             "face": TEAL,
+            "edge": TEAL,
             "text": WHITE,
+            "core": True,
         },
         {
             "title": "LDA Classification",
             "subtitle": "Out-of-fold linear discriminant\n" r"$\rightarrow$ Output: True vs. False Memory",
-            "face": SLATE,
+            "face": STANDARD_FACE,
+            "edge": STANDARD_EDGE,
             "text": DARK_TEXT,
+            "core": False,
         },
     ]
 
@@ -104,9 +115,9 @@ def generate_figure6():
     FIG_W, FIG_H = 16, 5
     N = len(stages)
 
-    box_w = 2.55
+    box_w = 2.30
     box_h = 2.05
-    gap = 0.55
+    gap = 0.95
     total_w = N * box_w + (N - 1) * gap
     x_start = (FIG_W - total_w) / 2.0
     y_center = FIG_H / 2.0 - 0.15
@@ -122,30 +133,30 @@ def generate_figure6():
         cx = x0 + box_w / 2.0
         cy = y_center
 
-        is_core = stage["face"] == TEAL
+        is_core = stage["core"]
 
+        # Modern drop shadow -- every card gets one, offset down-right
+        shadow = FancyBboxPatch(
+            (x0 + 0.05, y0 - 0.05), box_w, box_h,
+            boxstyle="round,pad=0.4,rounding_size=0.16",
+            linewidth=0,
+            facecolor=SHADOW_COLOR,
+            alpha=0.20,
+            zorder=1,
+        )
+        ax.add_patch(shadow)
+
+        # Main floating card
         box = FancyBboxPatch(
             (x0, y0), box_w, box_h,
-            boxstyle="round,pad=0.4,rounding_size=0.18",
-            linewidth=2.2 if is_core else 1.3,
-            edgecolor=TEAL if is_core else "#94A3B8",
+            boxstyle="round,pad=0.4,rounding_size=0.16",
+            linewidth=0 if is_core else 1.5,
+            edgecolor="none" if is_core else stage["edge"],
             facecolor=stage["face"],
             mutation_aspect=1,
             zorder=2,
         )
         ax.add_patch(box)
-
-        # Subtle drop-effect for the core contribution block to make it "pop"
-        if is_core:
-            shadow = FancyBboxPatch(
-                (x0 + 0.06, y0 - 0.06), box_w, box_h,
-                boxstyle="round,pad=0.4,rounding_size=0.18",
-                linewidth=0,
-                facecolor="#0F766E",
-                alpha=0.18,
-                zorder=1,
-            )
-            ax.add_patch(shadow)
 
         # Title text
         ax.text(
@@ -178,6 +189,7 @@ def generate_figure6():
             linewidth=1.1,
             zorder=4,
         ))
+        # (badge fill/edge logic unchanged from before -- retained for step numbering)
         ax.text(
             badge_x, badge_y, str(i + 1),
             ha="center", va="center",
@@ -199,10 +211,11 @@ def generate_figure6():
             xy=(x_head, y), xycoords="data",
             xytext=(x_tail, y), textcoords="data",
             arrowprops=dict(
-                arrowstyle="-|>", lw=2, color=ARROW_COLOR,
-                shrinkA=2, shrinkB=2, mutation_scale=22,
+                arrowstyle="-|>", lw=3.5, color=ARROW_COLOR,
+                shrinkA=0, shrinkB=0, mutation_scale=25,
+                joinstyle="round", capstyle="round",
             ),
-            zorder=2,
+            zorder=5,
         )
 
     # ------------------------------------------------------------------------
