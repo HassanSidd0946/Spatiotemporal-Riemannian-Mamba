@@ -13,6 +13,21 @@ the BCI EEG false-memory classification manuscript.
 Built entirely with matplotlib.patches (FancyBboxPatch + FancyArrowPatch)
 -- no graphviz / networkx dependency, so it renders identically anywhere.
 
+LEGIBILITY PATCH (this version):
+    - All in-box equation / subtext font sizes bumped up substantially
+      (roughly +3.5-4pt across the board) so nothing requires zooming.
+    - Global mathtext font switched from "stix" to "dejavusans", which
+      renders noticeably bolder/thicker strokes than STIX and matches the
+      DejaVu Sans family already used for titles/labels -- this alone
+      fixes most of the "thin math text bleeding into dark backgrounds"
+      problem.
+    - Key symbols (Sigma, X, f_s, f_t, z, s, I) wrapped in \\mathbf{} /
+      \\boldsymbol{} so they render with heavier strokes on the
+      teal/amber/purple fills.
+    - Card heights (CARD_H, FUSION_H, INPUT_H) increased slightly to give
+      the larger text comfortable padding -- box widths, x-positions,
+      colors, arrows, and branch layout are all untouched.
+
 This version runs the drawing code INSIDE a Modal function so the outputs
 are written directly onto the `eeg-data-vol` persistent volume at:
     /data/figures/figure7_mamba_architecture.png  (600 DPI)
@@ -48,8 +63,11 @@ def generate_figure7():
     # Global style configuration
     # ------------------------------------------------------------------------
     plt.rcParams["text.usetex"] = False
-    plt.rcParams["mathtext.fontset"] = "stix"
-    plt.rcParams["font.family"] = "STIXGeneral"
+    # Switched from "stix" -> "dejavusans": dejavusans has noticeably
+    # thicker/bolder strokes than STIX, which is what was causing the thin
+    # math text to visually "bleed" into the teal / amber / purple fills.
+    plt.rcParams["mathtext.fontset"] = "dejavusans"
+    plt.rcParams["font.family"] = "DejaVu Sans"
     plt.rcParams["axes.unicode_minus"] = False
 
     PNG_PATH = os.path.join(OUTPUT_DIR, "figure7_mamba_architecture.png")
@@ -69,7 +87,7 @@ def generate_figure7():
     # Drawing helpers
     # ------------------------------------------------------------------------
     def draw_card(ax, x, y, w, h, title, subtitle, facecolor, edgecolor,
-                  textcolor, title_fs=11.5, subtitle_fs=10.0, zorder=3):
+                  textcolor, title_fs=14.0, subtitle_fs=14.0, zorder=3):
         """Floating rounded card with a soft drop shadow, a bold title
         line, and a mathtext subtitle/formula line underneath."""
         shadow = FancyBboxPatch(
@@ -101,10 +119,11 @@ def generate_figure7():
             family="DejaVu Sans",
         )
         ax.text(
-            cx, y + h * 0.28, subtitle,
+            cx, y + h * 0.27, subtitle,
             ha="center", va="center",
-            fontsize=subtitle_fs,
+            fontsize=subtitle_fs, fontweight="bold",
             color=textcolor, zorder=zorder + 1,
+            math_fontfamily="dejavusans",
         )
 
     def draw_arrow(ax, start, end, connectionstyle="arc3,rad=0.0",
@@ -137,9 +156,9 @@ def generate_figure7():
     # ------------------------------------------------------------------------
     # Figure & axes setup
     # ------------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(18, 7))
+    fig, ax = plt.subplots(figsize=(18, 7.6))
     ax.set_xlim(0, 18.6)
-    ax.set_ylim(0, 7.2)
+    ax.set_ylim(0, 7.6)
     ax.axis("off")
     ax.set_aspect("equal")
 
@@ -147,14 +166,14 @@ def generate_figure7():
     # Layout geometry
     # ------------------------------------------------------------------------
     CARD_W = 2.35
-    CARD_H = 1.15
+    CARD_H = 1.45          # was 1.15 -- extra height for larger subtext
     GAP_X = 0.55
 
     INPUT_W = 2.35
-    INPUT_H = 1.35
+    INPUT_H = 1.55          # was 1.35
 
-    TOP_Y = 5.05      # spatial / Riemannian track (top)
-    BOTTOM_Y = 0.75   # temporal / Mamba track (bottom)
+    TOP_Y = 5.05      # spatial / Riemannian track (top)  -- unchanged
+    BOTTOM_Y = 0.75   # temporal / Mamba track (bottom)   -- unchanged
 
     INPUT_X = 0.35
     INPUT_Y = 2.85
@@ -166,7 +185,7 @@ def generate_figure7():
     FUSION_X0 = A_X[2] + CARD_W + 1.25
     F_X = [FUSION_X0 + i * (CARD_W + GAP_X) for i in range(3)]
     FUSION_Y = 2.85
-    FUSION_H = 1.35
+    FUSION_H = 1.65          # was 1.35
 
     # ------------------------------------------------------------------------
     # INPUT CARD
@@ -174,9 +193,9 @@ def generate_figure7():
     draw_card(
         ax, INPUT_X, INPUT_Y, INPUT_W, INPUT_H,
         title="Input EEG Matrix",
-        subtitle=r"$X \in \mathbb{R}^{B \times 62 \times T}$",
+        subtitle=r"$\mathbf{X} \in \mathbb{R}^{B \times 62 \times T}$",
         facecolor=COLOR_NEUTRAL_FACE, edgecolor=COLOR_NEUTRAL_EDGE,
-        textcolor=COLOR_TEXT_DARK, title_fs=12.5, subtitle_fs=11,
+        textcolor=COLOR_TEXT_DARK, title_fs=16, subtitle_fs=15,
     )
 
     # ------------------------------------------------------------------------
@@ -188,23 +207,23 @@ def generate_figure7():
     draw_card(
         ax, A_X[0], TOP_Y, CARD_W, CARD_H,
         title="Covariance +\nTikhonov Reg.",
-        subtitle=r"$\Sigma=\frac{1}{T-1}XX^{T}+\alpha I$",
+        subtitle=r"$\boldsymbol{\Sigma}=\frac{1}{T-1}\mathbf{X}\mathbf{X}^{T}+\alpha \mathbf{I}$",
         facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, A_X[1], TOP_Y, CARD_W, CARD_H,
         title="Log-Euclidean\nMapping",
-        subtitle=r"$\log(\Sigma)\rightarrow s\in\mathbb{R}^{1953}$",
+        subtitle=r"$\log(\boldsymbol{\Sigma})\rightarrow \mathbf{s}\in\mathbb{R}^{1953}$",
         facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, A_X[2], TOP_Y, CARD_W, CARD_H,
         title="Spatial Features",
-        subtitle=r"$f_{s}\in\mathbb{R}^{32}$",
+        subtitle=r"$\mathbf{f}_{s}\in\mathbb{R}^{32}$",
         facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=11,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=15,
     )
 
     # ------------------------------------------------------------------------
@@ -216,23 +235,23 @@ def generate_figure7():
     draw_card(
         ax, B_X[0], BOTTOM_Y, CARD_W, CARD_H,
         title="Linear\nProjection",
-        subtitle=r"Channels $62\rightarrow$ Hidden $32$",
+        subtitle=r"Channels $\mathbf{62}\rightarrow$ Hidden $\mathbf{32}$",
         facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, B_X[1], BOTTOM_Y, CARD_W, CARD_H,
         title="Mamba SSM\nStack",
-        subtitle=r"$2$ layers, $d_{state}=16$",
+        subtitle=r"$\mathbf{2}$ layers, $d_{\mathrm{state}}=\mathbf{16}$",
         facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, B_X[2], BOTTOM_Y, CARD_W, CARD_H,
         title="Temporal Features",
-        subtitle=r"$f_{t}\in\mathbb{R}^{32}$",
+        subtitle=r"$\mathbf{f}_{t}\in\mathbb{R}^{32}$",
         facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=11,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=15,
     )
 
     # ------------------------------------------------------------------------
@@ -241,23 +260,23 @@ def generate_figure7():
     draw_card(
         ax, F_X[0], FUSION_Y, CARD_W, FUSION_H,
         title="Feature\nConcatenation",
-        subtitle=r"$z=[f_{s}\,;\,f_{t}]\in\mathbb{R}^{64}$",
+        subtitle=r"$\mathbf{z}=[\mathbf{f}_{s}\,;\,\mathbf{f}_{t}]\in\mathbb{R}^{64}$",
         facecolor=COLOR_FUSION_FACE, edgecolor=COLOR_FUSION_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, F_X[1], FUSION_Y, CARD_W, FUSION_H,
         title="Classification\nHead",
         subtitle="Linear \u2192 GELU \u2192 Linear",
         facecolor=COLOR_FUSION_FACE, edgecolor=COLOR_FUSION_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=10.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
     draw_card(
         ax, F_X[2], FUSION_Y, CARD_W, FUSION_H,
         title="Binary Prediction",
         subtitle="True vs. False Memory",
         facecolor=COLOR_NEUTRAL_FACE, edgecolor=COLOR_NEUTRAL_EDGE,
-        textcolor=COLOR_TEXT_DARK, title_fs=11.5, subtitle_fs=10,
+        textcolor=COLOR_TEXT_DARK, title_fs=15, subtitle_fs=14,
     )
 
     # ------------------------------------------------------------------------
