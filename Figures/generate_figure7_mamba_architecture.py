@@ -13,20 +13,28 @@ the BCI EEG false-memory classification manuscript.
 Built entirely with matplotlib.patches (FancyBboxPatch + FancyArrowPatch)
 -- no graphviz / networkx dependency, so it renders identically anywhere.
 
-LEGIBILITY PATCH (this version):
-    - All in-box equation / subtext font sizes bumped up substantially
-      (roughly +3.5-4pt across the board) so nothing requires zooming.
-    - Global mathtext font switched from "stix" to "dejavusans", which
-      renders noticeably bolder/thicker strokes than STIX and matches the
-      DejaVu Sans family already used for titles/labels -- this alone
-      fixes most of the "thin math text bleeding into dark backgrounds"
-      problem.
-    - Key symbols (Sigma, X, f_s, f_t, z, s, I) wrapped in \\mathbf{} /
-      \\boldsymbol{} so they render with heavier strokes on the
-      teal/amber/purple fills.
-    - Card heights (CARD_H, FUSION_H, INPUT_H) increased slightly to give
-      the larger text comfortable padding -- box widths, x-positions,
-      colors, arrows, and branch layout are all untouched.
+MANUAL OVERRIDE PATCH (this version):
+    - ARROW FIX (v2 -- PAD-AWARE): the two curved arrows leaving the
+      "Input EEG Matrix" box were still visually piercing the box's right
+      border. Root cause: FancyBboxPatch's boxstyle="round,pad=0.02,..."
+      inflates the box's *drawn* footprint by `pad` in data units beyond
+      the mathematical (x, y, w, h) rectangle passed to the constructor.
+      The previous fix used `get_x() + get_width()`, which is the
+      mathematical edge, not the visual edge -- so it undershot by
+      exactly `pad`. This version defines a single BOX_PAD constant
+      (matching the pad=0.02 used in every boxstyle string), and computes
+      the arrow start x as:
+          start_x = input_x_center + (input_width / 2) + BOX_PAD + 0.02
+      i.e. mathematical edge + rounding pad + a small hard safety margin,
+      guaranteeing the arrow originates strictly outside the drawn border.
+    - TITLE FIX: the main figure title is centered via
+      fig.suptitle(..., x=0.5, ha="center", fontweight="bold", fontsize=16).
+    - FINAL BOX FIX: the "Binary Prediction" output box width is
+      hardcoded to OUTPUT_W (wider than the purple Classification Head
+      box) so the text has room to breathe. The "True vs. False Memory"
+      subtitle uses hardcoded fontsize=12, fontweight='bold', and an
+      explicit line break ("True vs.\\nFalse Memory") so it can never
+      overflow the box.
 
 This version runs the drawing code INSIDE a Modal function so the outputs
 are written directly onto the `eeg-data-vol` persistent volume at:
@@ -63,9 +71,6 @@ def generate_figure7():
     # Global style configuration
     # ------------------------------------------------------------------------
     plt.rcParams["text.usetex"] = False
-    # Switched from "stix" -> "dejavusans": dejavusans has noticeably
-    # thicker/bolder strokes than STIX, which is what was causing the thin
-    # math text to visually "bleed" into the teal / amber / purple fills.
     plt.rcParams["mathtext.fontset"] = "dejavusans"
     plt.rcParams["font.family"] = "DejaVu Sans"
     plt.rcParams["axes.unicode_minus"] = False
@@ -83,16 +88,31 @@ def generate_figure7():
     COLOR_TEXT_DARK = "#0F172A"
     COLOR_TEXT_LIGHT = "#FFFFFF"
 
+    # Manual hardcoded overrides (per explicit request -- do not derive
+    # these from patch geometry / relative calculations).
+    OUTPUT_W = 3.60              # hardcoded, wider than CARD_W (purple box)
+
+    # BOX_PAD must match the `pad=` value used in every boxstyle string
+    # below ("round,pad=0.02,..."). FancyBboxPatch draws its visual
+    # border this far *outside* the (x, y, w, h) rectangle passed to the
+    # constructor, so any arrow anchored at the mathematical edge alone
+    # will visually pierce the border by this amount.
+    BOX_PAD = 0.02
+    ARROW_SAFETY_MARGIN = 0.02   # extra hard margin, per explicit request
+
     # ------------------------------------------------------------------------
     # Drawing helpers
     # ------------------------------------------------------------------------
     def draw_card(ax, x, y, w, h, title, subtitle, facecolor, edgecolor,
                   textcolor, title_fs=14.0, subtitle_fs=14.0, zorder=3):
         """Floating rounded card with a soft drop shadow, a bold title
-        line, and a mathtext subtitle/formula line underneath."""
+        line, and a mathtext subtitle/formula line underneath.
+
+        Returns the card's FancyBboxPatch object.
+        """
         shadow = FancyBboxPatch(
             (x + 0.06, y - 0.06), w, h,
-            boxstyle="round,pad=0.02,rounding_size=0.10",
+            boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
             linewidth=0,
             facecolor="#000000",
             alpha=0.15,
@@ -102,7 +122,7 @@ def generate_figure7():
 
         card = FancyBboxPatch(
             (x, y), w, h,
-            boxstyle="round,pad=0.02,rounding_size=0.10",
+            boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
             linewidth=1.8,
             facecolor=facecolor,
             edgecolor=edgecolor,
@@ -125,6 +145,8 @@ def generate_figure7():
             color=textcolor, zorder=zorder + 1,
             math_fontfamily="dejavusans",
         )
+
+        return card
 
     def draw_arrow(ax, start, end, connectionstyle="arc3,rad=0.0",
                    lw=3.0, mutation_scale=20, zorder=2):
@@ -156,8 +178,8 @@ def generate_figure7():
     # ------------------------------------------------------------------------
     # Figure & axes setup
     # ------------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(18, 7.6))
-    ax.set_xlim(0, 18.6)
+    fig, ax = plt.subplots(figsize=(24, 7.0))
+    ax.set_xlim(0, 26.6)
     ax.set_ylim(0, 7.6)
     ax.axis("off")
     ax.set_aspect("equal")
@@ -165,32 +187,32 @@ def generate_figure7():
     # ------------------------------------------------------------------------
     # Layout geometry
     # ------------------------------------------------------------------------
-    CARD_W = 2.35
-    CARD_H = 1.45          # was 1.15 -- extra height for larger subtext
-    GAP_X = 0.55
+    CARD_W = 2.90
+    CARD_H = 1.45
+    GAP_X = 0.60
 
-    INPUT_W = 2.35
-    INPUT_H = 1.55          # was 1.35
+    INPUT_W = 2.90
+    INPUT_H = 1.55
 
-    TOP_Y = 5.05      # spatial / Riemannian track (top)  -- unchanged
-    BOTTOM_Y = 0.75   # temporal / Mamba track (bottom)   -- unchanged
+    TOP_Y = 5.05
+    BOTTOM_Y = 0.75
 
-    INPUT_X = 0.35
+    INPUT_X = 0.40
     INPUT_Y = 2.85
 
-    track_x0 = INPUT_X + INPUT_W + 1.15   # first branch box x
+    track_x0 = INPUT_X + INPUT_W + 1.15
     A_X = [track_x0 + i * (CARD_W + GAP_X) for i in range(3)]
     B_X = A_X
 
     FUSION_X0 = A_X[2] + CARD_W + 1.25
     F_X = [FUSION_X0 + i * (CARD_W + GAP_X) for i in range(3)]
     FUSION_Y = 2.85
-    FUSION_H = 1.65          # was 1.35
+    FUSION_H = 1.65
 
     # ------------------------------------------------------------------------
     # INPUT CARD
     # ------------------------------------------------------------------------
-    draw_card(
+    input_box = draw_card(
         ax, INPUT_X, INPUT_Y, INPUT_W, INPUT_H,
         title="Input EEG Matrix",
         subtitle=r"$\mathbf{X} \in \mathbb{R}^{B \times 62 \times T}$",
@@ -235,7 +257,7 @@ def generate_figure7():
     draw_card(
         ax, B_X[0], BOTTOM_Y, CARD_W, CARD_H,
         title="Linear\nProjection",
-        subtitle=r"Channels $\mathbf{62}\rightarrow$ Hidden $\mathbf{32}$",
+        subtitle=r"Channels $\mathbf{62}$" "\n" r"$\rightarrow$ Hidden $\mathbf{32}$",
         facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
         textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
@@ -267,36 +289,81 @@ def generate_figure7():
     draw_card(
         ax, F_X[1], FUSION_Y, CARD_W, FUSION_H,
         title="Classification\nHead",
-        subtitle="Linear \u2192 GELU \u2192 Linear",
+        subtitle="Linear \u2192 GELU\n\u2192 Linear",
         facecolor=COLOR_FUSION_FACE, edgecolor=COLOR_FUSION_FACE,
         textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
     )
-    draw_card(
-        ax, F_X[2], FUSION_Y, CARD_W, FUSION_H,
-        title="Binary Prediction",
-        subtitle="True vs. False Memory",
-        facecolor=COLOR_NEUTRAL_FACE, edgecolor=COLOR_NEUTRAL_EDGE,
-        textcolor=COLOR_TEXT_DARK, title_fs=15, subtitle_fs=14,
+
+    # --- FINAL BOX FIX (hardcoded manual override) ---
+    # Width is no longer CARD_W -- it is the explicit OUTPUT_W constant
+    # defined above, wider than the purple Classification Head box, so the
+    # subtitle text has guaranteed room and cannot overflow.
+    output_shadow = FancyBboxPatch(
+        (F_X[2] + 0.06, FUSION_Y - 0.06), OUTPUT_W, FUSION_H,
+        boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
+        linewidth=0, facecolor="#000000", alpha=0.15, zorder=2,
+    )
+    ax.add_patch(output_shadow)
+
+    output_box = FancyBboxPatch(
+        (F_X[2], FUSION_Y), OUTPUT_W, FUSION_H,
+        boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
+        linewidth=1.8,
+        facecolor=COLOR_NEUTRAL_FACE,
+        edgecolor=COLOR_NEUTRAL_EDGE,
+        zorder=3,
+    )
+    ax.add_patch(output_box)
+
+    output_cx = F_X[2] + OUTPUT_W / 2
+    ax.text(
+        output_cx, FUSION_Y + FUSION_H * 0.66, "Binary Prediction",
+        ha="center", va="center",
+        fontsize=16, fontweight="bold",
+        color="#1E293B", zorder=4,
+        family="DejaVu Sans",
+    )
+    # Hardcoded per explicit instruction: fontsize=12, fontweight='bold',
+    # explicit line break so it can never overflow the box.
+    ax.text(
+        output_cx, FUSION_Y + FUSION_H * 0.27, "True vs.\nFalse Memory",
+        ha="center", va="center",
+        fontsize=12, fontweight="bold",
+        color="#1E293B", zorder=4,
+        family="DejaVu Sans",
     )
 
     # ------------------------------------------------------------------------
     # ARROWS
     # ------------------------------------------------------------------------
-    input_right_x = INPUT_X + INPUT_W
+    # --- ARROW FIX v2 (pad-aware edge snap) ---
+    # The visual right border of `input_box` sits at:
+    #     mathematical_edge (get_x() + get_width())  +  BOX_PAD (rounding pad)
+    # because FancyBboxPatch inflates its drawn footprint by `pad` beyond
+    # the (x, y, w, h) rectangle passed to the constructor. We anchor the
+    # arrow start just outside THAT true visual edge, plus a small hard
+    # safety margin, so it can never pierce the border.
+    input_box_center_x = input_box.get_x() + input_box.get_width() / 2
+    input_math_right_x = input_box_center_x + (input_box.get_width() / 2)
+    input_right_x = input_math_right_x + BOX_PAD + ARROW_SAFETY_MARGIN
     input_mid_y = INPUT_Y + INPUT_H / 2
 
     # Branching arrows: Input -> A1 (up) and Input -> B1 (down)
+    # zorder=10 forces these two specific arrows to render cleanly on top
+    # of every other element (boxes, shadows, text) in the figure.
     draw_arrow(
         ax,
         (input_right_x, input_mid_y),
         (A_X[0], TOP_Y + CARD_H / 2),
         connectionstyle="arc3,rad=-0.28",
+        zorder=10,
     )
     draw_arrow(
         ax,
         (input_right_x, input_mid_y),
         (B_X[0], BOTTOM_Y + CARD_H / 2),
         connectionstyle="arc3,rad=0.28",
+        zorder=10,
     )
 
     # Top branch internal arrows: A1 -> A2 -> A3
@@ -336,7 +403,8 @@ def generate_figure7():
     # ------------------------------------------------------------------------
     fig.suptitle(
         "Figure 7: Architecture of the Dual-Branch Spatiotemporal Riemannian Mamba Network",
-        fontsize=15, fontweight="bold", color=COLOR_TEXT_DARK, y=0.99,
+        x=0.5, ha="center", fontweight="bold", fontsize=16,
+        color=COLOR_TEXT_DARK, y=0.99,
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
