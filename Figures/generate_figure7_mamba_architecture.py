@@ -1,3 +1,503 @@
+# # commands to run :
+# # modal run generate_figure7_mamba_architecture.py
+# # commands to download:
+# # modal volume get eeg-data-vol /figures/figure7_mamba_architecture.png .
+# # modal volume get eeg-data-vol /figures/figure7_mamba_architecture.pdf .
+# """
+# generate_figure7_mamba_architecture.py
+
+# Generates "Figure 7: Architecture of the Dual-Branch Spatiotemporal
+# Riemannian Mamba Network" -- a publication-quality Modern Minimalist
+# architecture diagram for the BCI EEG false-memory classification
+# manuscript.
+
+# DESIGN NOTE (this version -- v5, "Polish Pass" on top of the v4
+# Absolute Coordinate System):
+#     The v4 absolute-coordinate grid layout is unchanged in spirit --
+#     every box still lives at a literal, hand-specified (x, y, w, h)
+#     on the fixed `xlim(0, 100)` / `ylim` grid, with no relative math.
+#     This pass makes four surgical adjustments on top of that grid:
+
+#     1. PREMIUM COLOR PALETTE (softer, more elegant tones):
+#            Spatial branch (teal):    #16A085
+#            Temporal branch (orange): #E67E22
+#            Fusion / classification:  #8E44AD
+#            Input / output grey:      #F8F9F9
+#        Text colors (white on dark cards, dark slate on light cards)
+#        are unchanged.
+
+#     2. FUSION STACK RE-SPACED. The three fusion-stack cards
+#        ("Feature Concatenation", "Classification Head", "Binary
+#        Prediction") were sitting close enough that the boxstyle
+#        padding made them read as glued together. They now sit at
+#        y = 17, 2, -13 (each h=10), giving a genuine 5-unit empty gap
+#        between consecutive cards -- and, because `connect_down()`
+#        is generic over the box tuples it's given, updating those
+#        three constants is *automatically* enough to place a correct
+#        non-piercing straight arrow in each of the two new gaps; no
+#        new arrow-drawing code was needed.
+#     3. MERGE-ARROW PIERCING FIXED. The two curved arrows from the
+#        Spatial/Temporal Features cards down into the fusion stack
+#        now target a join point computed as
+#        `fusion_top_y + EXTRA_MERGE_MARGIN` (EXTRA_MERGE_MARGIN = 2.5)
+#        rather than a hand-tuned constant -- so if FUSION_BOX_1 ever
+#        moves again, the join point automatically stays pinned a safe
+#        2.5 units above its top edge instead of silently drifting back
+#        into piercing range. The short vertical trunk stub from that
+#        join point down to the card's true top edge (+ SAFE_MARGIN)
+#        is unchanged.
+#     4. TOP BRANCH ARROWS DEFORKED. Both diverging arrows used to
+#        leave the trunk split point from the *exact same pixel*
+#        (50, trunk_split_y), which reads as a single line splitting
+#        into two heads right at the vertex. They now leave from two
+#        points 2 units apart -- (48, trunk_split_y) and
+#        (52, trunk_split_y) -- giving a small, clean visual fork
+#        instead of a shared origin point. (Note: the fork is kept
+#        below the branch-label row at y=78, not at the Input card's
+#        own bottom edge at y=85 -- pulling the fork all the way up to
+#        the card edge would route both diagonals directly through the
+#        label text band, since the branch labels occupy the entire gap
+#        between y=78 and the card. Keeping the trunk stem + low fork
+#        preserves the "arrows never cross label text" guarantee from
+#        v4 while still giving the requested visual separation.)
+
+# This version runs the drawing code INSIDE a Modal function so the outputs
+# are written directly onto the `eeg-data-vol` persistent volume at:
+#     /data/figures/figure7_mamba_architecture.png  (600 DPI)
+#     /data/figures/figure7_mamba_architecture.pdf
+
+# Usage (from your local machine, in the venv where `modal` is installed):
+#     modal run generate_figure7_mamba_architecture.py
+# """
+
+# import modal
+
+# # ----------------------------------------------------------------------------
+# # Modal app / image / volume setup
+# # ----------------------------------------------------------------------------
+# app = modal.App("eeg-figure7-architecture")
+
+# image = modal.Image.debian_slim().pip_install("matplotlib")
+
+# volume = modal.Volume.from_name("eeg-data-vol", create_if_missing=True)
+
+# OUTPUT_DIR = "/data/figures"
+
+
+# @app.function(image=image, volumes={"/data": volume})
+# def generate_figure7():
+#     import os
+#     import matplotlib
+#     matplotlib.use("Agg")  # headless-safe backend
+#     import matplotlib.pyplot as plt
+#     from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+
+#     # ------------------------------------------------------------------------
+#     # Global style configuration
+#     # ------------------------------------------------------------------------
+#     plt.rcParams["text.usetex"] = False
+#     plt.rcParams["mathtext.fontset"] = "dejavusans"
+#     plt.rcParams["font.family"] = "DejaVu Sans"
+#     plt.rcParams["axes.unicode_minus"] = False
+
+#     PNG_PATH = os.path.join(OUTPUT_DIR, "figure7_mamba_architecture.png")
+#     PDF_PATH = os.path.join(OUTPUT_DIR, "figure7_mamba_architecture.pdf")
+
+#     # Color palette -- premium, softened tones
+#     COLOR_NEUTRAL_FACE = "#F8F9F9"   # light grey (input / final output)
+#     COLOR_TOP_FACE = "#16A085"       # soft sea-green/teal (spatial branch)
+#     COLOR_BOTTOM_FACE = "#E67E22"    # muted professional orange (temporal branch)
+#     COLOR_FUSION_FACE = "#8E44AD"    # rich muted purple (fusion / class. head)
+#     COLOR_SOFT_BORDER = "#CBD5E1"    # soft grey outline, no heavy black
+#     COLOR_ARROW = "#334155"          # soft slate
+#     COLOR_TEXT_DARK = "#0F172A"
+#     COLOR_TEXT_LIGHT = "#FFFFFF"
+
+#     SAFE_MARGIN = 1.5          # fixed margin nudged off every box edge for arrows
+#     EXTRA_MERGE_MARGIN = 2.5   # extra clearance for the two merge-join arrows
+#     ARROW_LW = 2.2
+#     ARROW_MUTATION = 18
+
+#     # ------------------------------------------------------------------------
+#     # Drawing helpers
+#     # ------------------------------------------------------------------------
+#     def draw_card(ax, x, y, w, h, title, subtitle, face, text,
+#                    title_fs=13, sub_fs=12, zorder=3):
+#         """Draws a single standalone floating rounded card at the exact
+#         absolute (x, y) bottom-left coordinate given, with soft grey
+#         outline and generous rounding -- no heavy black border, no
+#         drop shadow."""
+#         card = FancyBboxPatch(
+#             (x, y), w, h,
+#             boxstyle="round,pad=1.5,rounding_size=2",
+#             facecolor=face, edgecolor=COLOR_SOFT_BORDER, linewidth=1.5,
+#             zorder=zorder,
+#         )
+#         ax.add_patch(card)
+
+#         cx = x + w / 2
+#         ax.text(
+#             cx, y + h * 0.62, title,
+#             ha="center", va="center",
+#             fontsize=title_fs, fontweight="bold",
+#             color=text, zorder=zorder + 1,
+#             family="DejaVu Sans",
+#         )
+#         ax.text(
+#             cx, y + h * 0.28, subtitle,
+#             ha="center", va="center",
+#             fontsize=sub_fs, fontweight="bold",
+#             color=text, zorder=zorder + 1,
+#             math_fontfamily="dejavusans",
+#         )
+
+#     def box_top_center(x, y, w, h):
+#         return (x + w / 2, y + h)
+
+#     def box_bottom_center(x, y, w, h):
+#         return (x + w / 2, y)
+
+#     def draw_arrow(ax, start_pt, end_pt, rad=0.0, zorder=10,
+#                     shrinkA=0, shrinkB=0):
+#         """Draws an arrow between two points. By default both points
+#         are assumed ALREADY-MARGIN-ADJUSTED and shrinkA/shrinkB stay
+#         at 0 (the margin was already baked into start_pt / end_pt by
+#         the caller). Pass non-zero shrinkA/shrinkB for the rare case
+#         where raw box-edge points are supplied instead and the gap
+#         should be handled by matplotlib's own shrink mechanism."""
+#         arrow = FancyArrowPatch(
+#             start_pt, end_pt,
+#             connectionstyle=f"arc3,rad={rad}",
+#             arrowstyle="-|>",
+#             mutation_scale=ARROW_MUTATION,
+#             linewidth=ARROW_LW,
+#             color=COLOR_ARROW,
+#             zorder=zorder,
+#             shrinkA=shrinkA, shrinkB=shrinkB,
+#             capstyle="round",
+#             joinstyle="round",
+#         )
+#         ax.add_patch(arrow)
+
+#     def connect_down(ax, box_a, box_b, rad=0.0):
+#         """Straight-down (or gently curved) connector from the bottom
+#         of box_a to the top of box_b, each point nudged inward by
+#         SAFE_MARGIN so the arrow starts/ends just short of the
+#         rounded edge. Generic over whatever box tuples are passed in,
+#         so re-spacing a stack is just a matter of updating the box
+#         constants -- no separate arrow code to touch."""
+#         ax_, ay, aw, ah = box_a
+#         bx, by, bw, bh = box_b
+#         sx, sy = box_bottom_center(ax_, ay, aw, ah)
+#         ex, ey = box_top_center(bx, by, bw, bh)
+#         start_pt = (sx, sy - SAFE_MARGIN)
+#         end_pt = (ex, ey + SAFE_MARGIN)
+#         draw_arrow(ax, start_pt, end_pt, rad=rad)
+
+#     def draw_branch_label(ax, x, y, text, color):
+#         ax.text(
+#             x, y, text,
+#             ha="center", va="center",
+#             fontsize=13.5, fontweight="bold",
+#             color=color, style="italic",
+#             family="DejaVu Sans",
+#         )
+
+#     # ------------------------------------------------------------------------
+#     # Figure & axes setup -- fixed absolute grid (extended downward to fit
+#     # the re-spaced fusion stack, which now reaches y = -13)
+#     # ------------------------------------------------------------------------
+#     fig, ax = plt.subplots(figsize=(14, 15))
+#     ax.set_xlim(0, 100)
+#     ax.set_ylim(-18, 100)
+#     ax.axis("off")
+
+#     # ------------------------------------------------------------------------
+#     # ABSOLUTE COORDINATE SPECIFICATIONS (all literal, no derived math)
+#     # ------------------------------------------------------------------------
+#     # -- Input card --
+#     INPUT_BOX = (30, 85, 40, 10)  # x, y, w, h
+
+#     # -- Branch labels (safely below input, above the branch stacks) --
+#     SPATIAL_LABEL = (25, 78)
+#     TEMPORAL_LABEL = (75, 78)
+
+#     # -- Spatial branch stack (teal) --
+#     SPATIAL_BOX_1 = (10, 62, 30, 9)
+#     SPATIAL_BOX_2 = (10, 47, 30, 9)
+#     SPATIAL_BOX_3 = (10, 32, 30, 9)
+
+#     # -- Temporal branch stack (orange) --
+#     TEMPORAL_BOX_1 = (60, 62, 30, 9)
+#     TEMPORAL_BOX_2 = (60, 47, 30, 9)
+#     TEMPORAL_BOX_3 = (60, 32, 30, 9)
+
+#     # -- Fusion stack (purple, purple, grey) -- RE-SPACED per feedback:
+#     # y = 17, 2, -13 gives a clean 5-unit gap between every pair of cards.
+#     FUSION_BOX_1 = (30, 17, 40, 10)
+#     FUSION_BOX_2 = (30, 2, 40, 10)
+#     FUSION_BOX_3 = (30, -13, 40, 10)
+
+#     # ------------------------------------------------------------------------
+#     # INPUT CARD
+#     # ------------------------------------------------------------------------
+#     draw_card(
+#         ax, *INPUT_BOX,
+#         title="Input EEG Matrix",
+#         subtitle=r"$\mathbf{X} \in \mathbb{R}^{B \times 62 \times T}$",
+#         face=COLOR_NEUTRAL_FACE, text=COLOR_TEXT_DARK,
+#         title_fs=17, sub_fs=15,
+#     )
+
+#     # ------------------------------------------------------------------------
+#     # BRANCH LABELS -- placed in the empty gap below Input, well clear of
+#     # any arrow (arrows only occupy the vertical corridor at x=50 and the
+#     # short diagonal segments below y=78 down to the branch tops at y=71).
+#     # ------------------------------------------------------------------------
+#     draw_branch_label(ax, *SPATIAL_LABEL,
+#                        "Spatial Branch \u2014 Riemannian Geometry",
+#                        COLOR_TOP_FACE)
+#     draw_branch_label(ax, *TEMPORAL_LABEL,
+#                        "Temporal Branch \u2014 Mamba State-Space Model",
+#                        COLOR_BOTTOM_FACE)
+
+#     # ------------------------------------------------------------------------
+#     # SPATIAL / RIEMANNIAN BRANCH (soft teal)
+#     # ------------------------------------------------------------------------
+#     draw_card(ax, *SPATIAL_BOX_1,
+#               title="Covariance + Tikhonov Reg.",
+#               subtitle=r"$\boldsymbol{\Sigma}=\frac{1}{T-1}\mathbf{X}\mathbf{X}^{T}+\alpha \mathbf{I}$",
+#               face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=13)
+#     draw_card(ax, *SPATIAL_BOX_2,
+#               title="Log-Euclidean Mapping",
+#               subtitle=r"$\log(\boldsymbol{\Sigma})\rightarrow \mathbf{s}\in\mathbb{R}^{1953}$",
+#               face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=13)
+#     draw_card(ax, *SPATIAL_BOX_3,
+#               title="Spatial Features",
+#               subtitle=r"$\mathbf{f}_{s}\in\mathbb{R}^{32}$",
+#               face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=14)
+
+#     connect_down(ax, SPATIAL_BOX_1, SPATIAL_BOX_2)
+#     connect_down(ax, SPATIAL_BOX_2, SPATIAL_BOX_3)
+
+#     # ------------------------------------------------------------------------
+#     # TEMPORAL / MAMBA SSM BRANCH (muted orange)
+#     # ------------------------------------------------------------------------
+#     draw_card(ax, *TEMPORAL_BOX_1,
+#               title="Linear Projection",
+#               subtitle=r"Channels $\mathbf{62} \rightarrow$ Hidden $\mathbf{32}$",
+#               face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=13)
+#     draw_card(ax, *TEMPORAL_BOX_2,
+#               title="Mamba SSM Stack",
+#               subtitle=r"$\mathbf{2}$ layers, $d_{\mathrm{state}}=\mathbf{16}$",
+#               face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=13)
+#     draw_card(ax, *TEMPORAL_BOX_3,
+#               title="Temporal Features",
+#               subtitle=r"$\mathbf{f}_{t}\in\mathbb{R}^{32}$",
+#               face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=13, sub_fs=14)
+
+#     connect_down(ax, TEMPORAL_BOX_1, TEMPORAL_BOX_2)
+#     connect_down(ax, TEMPORAL_BOX_2, TEMPORAL_BOX_3)
+
+#     # ------------------------------------------------------------------------
+#     # FUSION + CLASSIFICATION HEAD + BINARY PREDICTION (now cleanly spaced,
+#     # each pair linked by its own straight non-piercing arrow)
+#     # ------------------------------------------------------------------------
+#     draw_card(ax, *FUSION_BOX_1,
+#               title="Feature Concatenation",
+#               subtitle=r"$\mathbf{z}=[\mathbf{f}_{s}\,;\,\mathbf{f}_{t}]\in\mathbb{R}^{64}$",
+#               face=COLOR_FUSION_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=14, sub_fs=13)
+#     draw_card(ax, *FUSION_BOX_2,
+#               title="Classification Head",
+#               subtitle="Linear \u2192 GELU \u2192 Linear",
+#               face=COLOR_FUSION_FACE, text=COLOR_TEXT_LIGHT,
+#               title_fs=14, sub_fs=12)
+#     draw_card(ax, *FUSION_BOX_3,
+#               title="Binary Prediction",
+#               subtitle="True vs. False Memory",
+#               face=COLOR_NEUTRAL_FACE, text=COLOR_TEXT_DARK,
+#               title_fs=17, sub_fs=12)
+
+#     # Feature Concatenation -> Classification Head
+#     connect_down(ax, FUSION_BOX_1, FUSION_BOX_2)
+#     # Classification Head -> Binary Prediction
+#     connect_down(ax, FUSION_BOX_2, FUSION_BOX_3)
+
+#     # ------------------------------------------------------------------------
+#     # ARROWS -- branching (Input -> Spatial / Temporal) and merging
+#     # (Spatial / Temporal -> Fusion). Every point is the box's true
+#     # top/bottom-center, manually nudged by a fixed margin, per spec.
+#     # ------------------------------------------------------------------------
+#     input_bottom = box_bottom_center(*INPUT_BOX)          # (50, 85)
+#     spatial_top = box_top_center(*SPATIAL_BOX_1)          # (25, 71)
+#     temporal_top = box_top_center(*TEMPORAL_BOX_1)        # (75, 71)
+
+#     trunk_start = (input_bottom[0], input_bottom[1] - SAFE_MARGIN)
+#     trunk_split_y = 74.0  # strictly below the y=78 branch labels
+
+#     # Straight trunk stub: Input -> split point (centered under Input,
+#     # horizontally clear of both branch labels at x=25 / x=75).
+#     draw_arrow(ax, trunk_start, (50, trunk_split_y), rad=0.0)
+
+#     # Diagonal branching arrows -- now leave from two points 2 units
+#     # apart (48 / 52) instead of a single shared vertex, for a clean
+#     # visual fork. Both still originate below the y=78 label row, so
+#     # they remain geometrically incapable of crossing the label text.
+#     FORK_LEFT_X, FORK_RIGHT_X = 48.0, 52.0
+#     draw_arrow(ax, (FORK_LEFT_X, trunk_split_y),
+#                (spatial_top[0], spatial_top[1] + SAFE_MARGIN), rad=0.15)
+#     draw_arrow(ax, (FORK_RIGHT_X, trunk_split_y),
+#                (temporal_top[0], temporal_top[1] + SAFE_MARGIN), rad=-0.15)
+
+#     spatial_bottom = box_bottom_center(*SPATIAL_BOX_3)    # (25, 32)
+#     temporal_bottom = box_bottom_center(*TEMPORAL_BOX_3)  # (75, 32)
+#     fusion_top = box_top_center(*FUSION_BOX_1)            # (50, 27)
+
+#     # Join point is pinned EXTRA_MERGE_MARGIN above the fusion card's true
+#     # top edge -- computed from the box itself, not a hand-tuned constant,
+#     # so the two merge arrows can never end up piercing the purple card
+#     # even if FUSION_BOX_1 moves again in a future pass.
+#     join_y = fusion_top[1] + EXTRA_MERGE_MARGIN
+
+#     # Merging arrows: each branch bottom -> join point. PERFECTLY STRAIGHT
+#     # per feedback -- no connectionstyle curve (rad=0.0), raw box-edge
+#     # points (no manual SAFE_MARGIN pre-subtraction), and shrinkA=2 /
+#     # shrinkB=5 handle the clean, non-piercing gap at each end instead.
+#     draw_arrow(ax, spatial_bottom, (50, join_y), rad=0.0,
+#                shrinkA=2, shrinkB=5)
+#     draw_arrow(ax, temporal_bottom, (50, join_y), rad=0.0,
+#                shrinkA=2, shrinkB=5)
+
+#     # Straight trunk stub: join point -> Fusion top (still respects
+#     # SAFE_MARGIN off the true card edge).
+#     draw_arrow(ax, (50, join_y), (fusion_top[0], fusion_top[1] + SAFE_MARGIN),
+#                rad=0.0)
+
+#     # ------------------------------------------------------------------------
+#     # Title
+#     # ------------------------------------------------------------------------
+#     fig.suptitle(
+#         "Figure 7: Architecture of the Dual-Branch Spatiotemporal Riemannian Mamba Network",
+#         x=0.5, ha="center", fontweight="bold", fontsize=16,
+#         color=COLOR_TEXT_DARK, y=0.95,
+#     )
+
+#     # ------------------------------------------------------------------------
+#     # Save outputs
+#     # ------------------------------------------------------------------------
+#     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+#     fig.savefig(PNG_PATH, dpi=600, bbox_inches="tight", facecolor="white")
+#     print(f"[OK] Saved PNG  -> {PNG_PATH} (600 DPI)")
+
+#     fig.savefig(PDF_PATH, bbox_inches="tight", facecolor="white")
+#     print(f"[OK] Saved PDF  -> {PDF_PATH}")
+
+#     plt.close(fig)
+
+#     # ------------------------------------------------------------------------
+#     # Persist to the Modal volume
+#     # ------------------------------------------------------------------------
+#     volume.commit()
+#     print("[OK] volume.commit() executed -- figures persisted to Modal volume 'eeg-data-vol'.")
+#     print("[DONE] Figure 7 generation complete.")
+
+
+# @app.local_entrypoint()
+# def main():
+#     generate_figure7.remote()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # commands to run :
 # modal run generate_figure7_mamba_architecture.py
 # commands to download:
@@ -7,34 +507,45 @@
 generate_figure7_mamba_architecture.py
 
 Generates "Figure 7: Architecture of the Dual-Branch Spatiotemporal
-Riemannian Mamba Network" -- a publication-quality, two-track flowchart for
-the BCI EEG false-memory classification manuscript.
+Riemannian Mamba Network" -- a publication-quality Modern Minimalist
+architecture diagram for the BCI EEG false-memory classification
+manuscript.
 
-Built entirely with matplotlib.patches (FancyBboxPatch + FancyArrowPatch)
--- no graphviz / networkx dependency, so it renders identically anywhere.
+DESIGN NOTE (this version -- v6, "Collision Fix Pass" on top of the v5
+Polish Pass):
+    Two geometric placement bugs from v5 are fixed here. Everything
+    else (colors, box positions, absolute coordinate system) is
+    unchanged.
 
-MANUAL OVERRIDE PATCH (this version):
-    - ARROW FIX (v2 -- PAD-AWARE): the two curved arrows leaving the
-      "Input EEG Matrix" box were still visually piercing the box's right
-      border. Root cause: FancyBboxPatch's boxstyle="round,pad=0.02,..."
-      inflates the box's *drawn* footprint by `pad` in data units beyond
-      the mathematical (x, y, w, h) rectangle passed to the constructor.
-      The previous fix used `get_x() + get_width()`, which is the
-      mathematical edge, not the visual edge -- so it undershot by
-      exactly `pad`. This version defines a single BOX_PAD constant
-      (matching the pad=0.02 used in every boxstyle string), and computes
-      the arrow start x as:
-          start_x = input_x_center + (input_width / 2) + BOX_PAD + 0.02
-      i.e. mathematical edge + rounding pad + a small hard safety margin,
-      guaranteeing the arrow originates strictly outside the drawn border.
-    - TITLE FIX: the main figure title is centered via
-      fig.suptitle(..., x=0.5, ha="center", fontweight="bold", fontsize=16).
-    - FINAL BOX FIX: the "Binary Prediction" output box width is
-      hardcoded to OUTPUT_W (wider than the purple Classification Head
-      box) so the text has room to breathe. The "True vs. False Memory"
-      subtitle uses hardcoded fontsize=12, fontweight='bold', and an
-      explicit line break ("True vs.\\nFalse Memory") so it can never
-      overflow the box.
+    1. TOP LABEL / ARROW COLLISION FIXED. The "Spatial Branch --
+       Riemannian Geometry" / "Temporal Branch -- Mamba State-Space
+       Model" labels sat at y=78, only 4 units above the fork point
+       at y=74, and the curved fork arrows (rad=+-0.15) bulged enough
+       to clip through the text. Fixed by:
+         - moving both labels further from the input card AND further
+           from the arrow forks: y 78 -> 81 (higher, i.e. closer to
+           the Input card, farther from the fork's vertical range),
+           and moved them wider apart in x (25/75 -> 22/78) so the
+           diagonal fork arrows -- which travel toward x=25/75 anyway
+           -- pass outside the (now wider) text bounding boxes.
+         - reducing the fork curvature (rad 0.15 -> 0.08) so the
+           arrows bulge less and stay clear of the label band.
+       Net effect: labels and arrows now occupy clearly separated
+       bands with real clearance, instead of a 4-unit margin that a
+       curved arrow could eat into.
+
+    2. BOTTOM ARROWHEAD OVERLAP FIXED. The two straight diagonal
+       merge arrows (Spatial Features -> Fusion, Temporal Features ->
+       Fusion) both used to target the identical point (50, join_y),
+       so the two large arrowheads landed on top of each other and
+       rendered as a single ugly black blob. Fixed by giving each
+       arrow its own distinct landing x on the Feature Concatenation
+       box's top border: the teal (spatial) arrow now targets
+       fusion_cx - 8, and the orange (temporal) arrow targets
+       fusion_cx + 8, both just above the box's true top edge (+
+       SAFE_MARGIN). The old single shared "join point" and the
+       redundant join-point -> fusion-top stub arrow are removed,
+       since each merge arrow now reaches the box directly.
 
 This version runs the drawing code INSIDE a Modal function so the outputs
 are written directly onto the `eeg-data-vol` persistent volume at:
@@ -78,325 +589,276 @@ def generate_figure7():
     PNG_PATH = os.path.join(OUTPUT_DIR, "figure7_mamba_architecture.png")
     PDF_PATH = os.path.join(OUTPUT_DIR, "figure7_mamba_architecture.pdf")
 
-    # Color palette
-    COLOR_NEUTRAL_FACE = "#F1F5F9"   # light grey (input / output)
-    COLOR_NEUTRAL_EDGE = "#334155"   # dark slate
-    COLOR_TOP_FACE = "#0D9488"       # deep teal (spatial / Riemannian branch)
-    COLOR_BOTTOM_FACE = "#D97706"    # deep amber (temporal / Mamba branch)
-    COLOR_FUSION_FACE = "#7C3AED"    # muted purple (fusion / output head)
-    COLOR_ARROW = "#0F172A"          # near-black slate
+    # Color palette -- premium, softened tones
+    COLOR_NEUTRAL_FACE = "#F8F9F9"   # light grey (input / final output)
+    COLOR_TOP_FACE = "#16A085"       # soft sea-green/teal (spatial branch)
+    COLOR_BOTTOM_FACE = "#E67E22"    # muted professional orange (temporal branch)
+    COLOR_FUSION_FACE = "#8E44AD"    # rich muted purple (fusion / class. head)
+    COLOR_SOFT_BORDER = "#CBD5E1"    # soft grey outline, no heavy black
+    COLOR_ARROW = "#334155"          # soft slate
     COLOR_TEXT_DARK = "#0F172A"
     COLOR_TEXT_LIGHT = "#FFFFFF"
 
-    # Manual hardcoded overrides (per explicit request -- do not derive
-    # these from patch geometry / relative calculations).
-    OUTPUT_W = 3.60              # hardcoded, wider than CARD_W (purple box)
-
-    # BOX_PAD must match the `pad=` value used in every boxstyle string
-    # below ("round,pad=0.02,..."). FancyBboxPatch draws its visual
-    # border this far *outside* the (x, y, w, h) rectangle passed to the
-    # constructor, so any arrow anchored at the mathematical edge alone
-    # will visually pierce the border by this amount.
-    BOX_PAD = 0.02
-    ARROW_SAFETY_MARGIN = 0.02   # extra hard margin, per explicit request
+    SAFE_MARGIN = 1.5          # fixed margin nudged off every box edge for arrows
+    ARROW_LW = 2.2
+    ARROW_MUTATION = 18
 
     # ------------------------------------------------------------------------
     # Drawing helpers
     # ------------------------------------------------------------------------
-    def draw_card(ax, x, y, w, h, title, subtitle, facecolor, edgecolor,
-                  textcolor, title_fs=14.0, subtitle_fs=14.0, zorder=3):
-        """Floating rounded card with a soft drop shadow, a bold title
-        line, and a mathtext subtitle/formula line underneath.
-
-        Returns the card's FancyBboxPatch object.
-        """
-        shadow = FancyBboxPatch(
-            (x + 0.06, y - 0.06), w, h,
-            boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
-            linewidth=0,
-            facecolor="#000000",
-            alpha=0.15,
-            zorder=zorder - 1,
-        )
-        ax.add_patch(shadow)
-
+    def draw_card(ax, x, y, w, h, title, subtitle, face, text,
+                   title_fs=13, sub_fs=12, zorder=3):
+        """Draws a single standalone floating rounded card at the exact
+        absolute (x, y) bottom-left coordinate given, with soft grey
+        outline and generous rounding -- no heavy black border, no
+        drop shadow."""
         card = FancyBboxPatch(
             (x, y), w, h,
-            boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
-            linewidth=1.8,
-            facecolor=facecolor,
-            edgecolor=edgecolor,
+            boxstyle="round,pad=1.5,rounding_size=2",
+            facecolor=face, edgecolor=COLOR_SOFT_BORDER, linewidth=1.5,
             zorder=zorder,
         )
         ax.add_patch(card)
 
         cx = x + w / 2
         ax.text(
-            cx, y + h * 0.66, title,
+            cx, y + h * 0.62, title,
             ha="center", va="center",
             fontsize=title_fs, fontweight="bold",
-            color=textcolor, zorder=zorder + 1,
+            color=text, zorder=zorder + 1,
             family="DejaVu Sans",
         )
         ax.text(
-            cx, y + h * 0.27, subtitle,
+            cx, y + h * 0.28, subtitle,
             ha="center", va="center",
-            fontsize=subtitle_fs, fontweight="bold",
-            color=textcolor, zorder=zorder + 1,
+            fontsize=sub_fs, fontweight="bold",
+            color=text, zorder=zorder + 1,
             math_fontfamily="dejavusans",
         )
 
-        return card
+    def box_top_center(x, y, w, h):
+        return (x + w / 2, y + h)
 
-    def draw_arrow(ax, start, end, connectionstyle="arc3,rad=0.0",
-                   lw=3.0, mutation_scale=20, zorder=2):
-        """Thick, bold, dark-slate arrow bridging the white-space gap
-        between two cards."""
+    def box_bottom_center(x, y, w, h):
+        return (x + w / 2, y)
+
+    def draw_arrow(ax, start_pt, end_pt, rad=0.0, zorder=10,
+                    shrinkA=0, shrinkB=0):
+        """Draws an arrow between two points. By default both points
+        are assumed ALREADY-MARGIN-ADJUSTED and shrinkA/shrinkB stay
+        at 0 (the margin was already baked into start_pt / end_pt by
+        the caller). Pass non-zero shrinkA/shrinkB for the rare case
+        where raw box-edge points are supplied instead and the gap
+        should be handled by matplotlib's own shrink mechanism."""
         arrow = FancyArrowPatch(
-            start, end,
-            connectionstyle=connectionstyle,
+            start_pt, end_pt,
+            connectionstyle=f"arc3,rad={rad}",
             arrowstyle="-|>",
-            mutation_scale=mutation_scale,
-            linewidth=lw,
+            mutation_scale=ARROW_MUTATION,
+            linewidth=ARROW_LW,
             color=COLOR_ARROW,
             zorder=zorder,
-            shrinkA=2, shrinkB=2,
+            shrinkA=shrinkA, shrinkB=shrinkB,
             capstyle="round",
             joinstyle="round",
         )
         ax.add_patch(arrow)
 
+    def connect_down(ax, box_a, box_b, rad=0.0):
+        """Straight-down (or gently curved) connector from the bottom
+        of box_a to the top of box_b, each point nudged inward by
+        SAFE_MARGIN so the arrow starts/ends just short of the
+        rounded edge. Generic over whatever box tuples are passed in,
+        so re-spacing a stack is just a matter of updating the box
+        constants -- no separate arrow code to touch."""
+        ax_, ay, aw, ah = box_a
+        bx, by, bw, bh = box_b
+        sx, sy = box_bottom_center(ax_, ay, aw, ah)
+        ex, ey = box_top_center(bx, by, bw, bh)
+        start_pt = (sx, sy - SAFE_MARGIN)
+        end_pt = (ex, ey + SAFE_MARGIN)
+        draw_arrow(ax, start_pt, end_pt, rad=rad)
+
     def draw_branch_label(ax, x, y, text, color):
         ax.text(
             x, y, text,
             ha="center", va="center",
-            fontsize=12, fontweight="bold",
+            fontsize=13.5, fontweight="bold",
             color=color, style="italic",
             family="DejaVu Sans",
         )
 
     # ------------------------------------------------------------------------
-    # Figure & axes setup
+    # Figure & axes setup -- fixed absolute grid (extended downward to fit
+    # the re-spaced fusion stack, which now reaches y = -13)
     # ------------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(24, 7.0))
-    ax.set_xlim(0, 26.6)
-    ax.set_ylim(0, 7.6)
+    fig, ax = plt.subplots(figsize=(14, 15))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(-18, 100)
     ax.axis("off")
-    ax.set_aspect("equal")
 
     # ------------------------------------------------------------------------
-    # Layout geometry
+    # ABSOLUTE COORDINATE SPECIFICATIONS (all literal, no derived math)
     # ------------------------------------------------------------------------
-    CARD_W = 2.90
-    CARD_H = 1.45
-    GAP_X = 0.60
+    # -- Input card --
+    INPUT_BOX = (30, 85, 40, 10)  # x, y, w, h
 
-    INPUT_W = 2.90
-    INPUT_H = 1.55
+    # -- Branch labels -- FIX #1: moved higher (78 -> 81, closer to the
+    # Input card / farther from the arrow-fork region below) and wider
+    # apart (25/75 -> 22/78), so the curved fork arrows can no longer
+    # clip through the label text.
+    SPATIAL_LABEL = (22, 81)
+    TEMPORAL_LABEL = (78, 81)
 
-    TOP_Y = 5.05
-    BOTTOM_Y = 0.75
+    # -- Spatial branch stack (teal) --
+    SPATIAL_BOX_1 = (10, 62, 30, 9)
+    SPATIAL_BOX_2 = (10, 47, 30, 9)
+    SPATIAL_BOX_3 = (10, 32, 30, 9)
 
-    INPUT_X = 0.40
-    INPUT_Y = 2.85
+    # -- Temporal branch stack (orange) --
+    TEMPORAL_BOX_1 = (60, 62, 30, 9)
+    TEMPORAL_BOX_2 = (60, 47, 30, 9)
+    TEMPORAL_BOX_3 = (60, 32, 30, 9)
 
-    track_x0 = INPUT_X + INPUT_W + 1.15
-    A_X = [track_x0 + i * (CARD_W + GAP_X) for i in range(3)]
-    B_X = A_X
-
-    FUSION_X0 = A_X[2] + CARD_W + 1.25
-    F_X = [FUSION_X0 + i * (CARD_W + GAP_X) for i in range(3)]
-    FUSION_Y = 2.85
-    FUSION_H = 1.65
+    # -- Fusion stack (purple, purple, grey) --
+    FUSION_BOX_1 = (30, 17, 40, 10)
+    FUSION_BOX_2 = (30, 2, 40, 10)
+    FUSION_BOX_3 = (30, -13, 40, 10)
 
     # ------------------------------------------------------------------------
     # INPUT CARD
     # ------------------------------------------------------------------------
-    input_box = draw_card(
-        ax, INPUT_X, INPUT_Y, INPUT_W, INPUT_H,
+    draw_card(
+        ax, *INPUT_BOX,
         title="Input EEG Matrix",
         subtitle=r"$\mathbf{X} \in \mathbb{R}^{B \times 62 \times T}$",
-        facecolor=COLOR_NEUTRAL_FACE, edgecolor=COLOR_NEUTRAL_EDGE,
-        textcolor=COLOR_TEXT_DARK, title_fs=16, subtitle_fs=15,
+        face=COLOR_NEUTRAL_FACE, text=COLOR_TEXT_DARK,
+        title_fs=17, sub_fs=15,
     )
 
     # ------------------------------------------------------------------------
-    # TOP BRANCH -- Spatial / Riemannian (Deep Teal)
+    # BRANCH LABELS -- FIX #1: repositioned (see SPATIAL_LABEL /
+    # TEMPORAL_LABEL above) so they sit clear of the fork arrows below.
     # ------------------------------------------------------------------------
-    draw_branch_label(ax, (A_X[0] + A_X[2] + CARD_W) / 2, TOP_Y + CARD_H + 0.42,
-                       "Spatial Branch \u2014 Riemannian Geometry", COLOR_TOP_FACE)
-
-    draw_card(
-        ax, A_X[0], TOP_Y, CARD_W, CARD_H,
-        title="Covariance +\nTikhonov Reg.",
-        subtitle=r"$\boldsymbol{\Sigma}=\frac{1}{T-1}\mathbf{X}\mathbf{X}^{T}+\alpha \mathbf{I}$",
-        facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
-    draw_card(
-        ax, A_X[1], TOP_Y, CARD_W, CARD_H,
-        title="Log-Euclidean\nMapping",
-        subtitle=r"$\log(\boldsymbol{\Sigma})\rightarrow \mathbf{s}\in\mathbb{R}^{1953}$",
-        facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
-    draw_card(
-        ax, A_X[2], TOP_Y, CARD_W, CARD_H,
-        title="Spatial Features",
-        subtitle=r"$\mathbf{f}_{s}\in\mathbb{R}^{32}$",
-        facecolor=COLOR_TOP_FACE, edgecolor=COLOR_TOP_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=15,
-    )
+    draw_branch_label(ax, *SPATIAL_LABEL,
+                       "Spatial Branch \u2014 Riemannian Geometry",
+                       COLOR_TOP_FACE)
+    draw_branch_label(ax, *TEMPORAL_LABEL,
+                       "Temporal Branch \u2014 Mamba State-Space Model",
+                       COLOR_BOTTOM_FACE)
 
     # ------------------------------------------------------------------------
-    # BOTTOM BRANCH -- Temporal / Mamba SSM (Deep Amber)
+    # SPATIAL / RIEMANNIAN BRANCH (soft teal)
     # ------------------------------------------------------------------------
-    draw_branch_label(ax, (B_X[0] + B_X[2] + CARD_W) / 2, BOTTOM_Y - 0.42,
-                       "Temporal Branch \u2014 Mamba State-Space Model", COLOR_BOTTOM_FACE)
+    draw_card(ax, *SPATIAL_BOX_1,
+              title="Covariance + Tikhonov Reg.",
+              subtitle=r"$\boldsymbol{\Sigma}=\frac{1}{T-1}\mathbf{X}\mathbf{X}^{T}+\alpha \mathbf{I}$",
+              face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=13)
+    draw_card(ax, *SPATIAL_BOX_2,
+              title="Log-Euclidean Mapping",
+              subtitle=r"$\log(\boldsymbol{\Sigma})\rightarrow \mathbf{s}\in\mathbb{R}^{1953}$",
+              face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=13)
+    draw_card(ax, *SPATIAL_BOX_3,
+              title="Spatial Features",
+              subtitle=r"$\mathbf{f}_{s}\in\mathbb{R}^{32}$",
+              face=COLOR_TOP_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=14)
 
-    draw_card(
-        ax, B_X[0], BOTTOM_Y, CARD_W, CARD_H,
-        title="Linear\nProjection",
-        subtitle=r"Channels $\mathbf{62}$" "\n" r"$\rightarrow$ Hidden $\mathbf{32}$",
-        facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
-    draw_card(
-        ax, B_X[1], BOTTOM_Y, CARD_W, CARD_H,
-        title="Mamba SSM\nStack",
-        subtitle=r"$\mathbf{2}$ layers, $d_{\mathrm{state}}=\mathbf{16}$",
-        facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
-    draw_card(
-        ax, B_X[2], BOTTOM_Y, CARD_W, CARD_H,
-        title="Temporal Features",
-        subtitle=r"$\mathbf{f}_{t}\in\mathbb{R}^{32}$",
-        facecolor=COLOR_BOTTOM_FACE, edgecolor=COLOR_BOTTOM_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=15,
-    )
+    connect_down(ax, SPATIAL_BOX_1, SPATIAL_BOX_2)
+    connect_down(ax, SPATIAL_BOX_2, SPATIAL_BOX_3)
 
     # ------------------------------------------------------------------------
-    # FUSION & OUTPUT (Muted Purple + final neutral output)
+    # TEMPORAL / MAMBA SSM BRANCH (muted orange)
     # ------------------------------------------------------------------------
-    draw_card(
-        ax, F_X[0], FUSION_Y, CARD_W, FUSION_H,
-        title="Feature\nConcatenation",
-        subtitle=r"$\mathbf{z}=[\mathbf{f}_{s}\,;\,\mathbf{f}_{t}]\in\mathbb{R}^{64}$",
-        facecolor=COLOR_FUSION_FACE, edgecolor=COLOR_FUSION_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
-    draw_card(
-        ax, F_X[1], FUSION_Y, CARD_W, FUSION_H,
-        title="Classification\nHead",
-        subtitle="Linear \u2192 GELU\n\u2192 Linear",
-        facecolor=COLOR_FUSION_FACE, edgecolor=COLOR_FUSION_FACE,
-        textcolor=COLOR_TEXT_LIGHT, title_fs=14, subtitle_fs=14,
-    )
+    draw_card(ax, *TEMPORAL_BOX_1,
+              title="Linear Projection",
+              subtitle=r"Channels $\mathbf{62} \rightarrow$ Hidden $\mathbf{32}$",
+              face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=13)
+    draw_card(ax, *TEMPORAL_BOX_2,
+              title="Mamba SSM Stack",
+              subtitle=r"$\mathbf{2}$ layers, $d_{\mathrm{state}}=\mathbf{16}$",
+              face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=13)
+    draw_card(ax, *TEMPORAL_BOX_3,
+              title="Temporal Features",
+              subtitle=r"$\mathbf{f}_{t}\in\mathbb{R}^{32}$",
+              face=COLOR_BOTTOM_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=13, sub_fs=14)
 
-    # --- FINAL BOX FIX (hardcoded manual override) ---
-    # Width is no longer CARD_W -- it is the explicit OUTPUT_W constant
-    # defined above, wider than the purple Classification Head box, so the
-    # subtitle text has guaranteed room and cannot overflow.
-    output_shadow = FancyBboxPatch(
-        (F_X[2] + 0.06, FUSION_Y - 0.06), OUTPUT_W, FUSION_H,
-        boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
-        linewidth=0, facecolor="#000000", alpha=0.15, zorder=2,
-    )
-    ax.add_patch(output_shadow)
-
-    output_box = FancyBboxPatch(
-        (F_X[2], FUSION_Y), OUTPUT_W, FUSION_H,
-        boxstyle=f"round,pad={BOX_PAD},rounding_size=0.10",
-        linewidth=1.8,
-        facecolor=COLOR_NEUTRAL_FACE,
-        edgecolor=COLOR_NEUTRAL_EDGE,
-        zorder=3,
-    )
-    ax.add_patch(output_box)
-
-    output_cx = F_X[2] + OUTPUT_W / 2
-    ax.text(
-        output_cx, FUSION_Y + FUSION_H * 0.66, "Binary Prediction",
-        ha="center", va="center",
-        fontsize=16, fontweight="bold",
-        color="#1E293B", zorder=4,
-        family="DejaVu Sans",
-    )
-    # Hardcoded per explicit instruction: fontsize=12, fontweight='bold',
-    # explicit line break so it can never overflow the box.
-    ax.text(
-        output_cx, FUSION_Y + FUSION_H * 0.27, "True vs.\nFalse Memory",
-        ha="center", va="center",
-        fontsize=12, fontweight="bold",
-        color="#1E293B", zorder=4,
-        family="DejaVu Sans",
-    )
+    connect_down(ax, TEMPORAL_BOX_1, TEMPORAL_BOX_2)
+    connect_down(ax, TEMPORAL_BOX_2, TEMPORAL_BOX_3)
 
     # ------------------------------------------------------------------------
-    # ARROWS
+    # FUSION + CLASSIFICATION HEAD + BINARY PREDICTION
     # ------------------------------------------------------------------------
-    # --- ARROW FIX v2 (pad-aware edge snap) ---
-    # The visual right border of `input_box` sits at:
-    #     mathematical_edge (get_x() + get_width())  +  BOX_PAD (rounding pad)
-    # because FancyBboxPatch inflates its drawn footprint by `pad` beyond
-    # the (x, y, w, h) rectangle passed to the constructor. We anchor the
-    # arrow start just outside THAT true visual edge, plus a small hard
-    # safety margin, so it can never pierce the border.
-    input_box_center_x = input_box.get_x() + input_box.get_width() / 2
-    input_math_right_x = input_box_center_x + (input_box.get_width() / 2)
-    input_right_x = input_math_right_x + BOX_PAD + ARROW_SAFETY_MARGIN
-    input_mid_y = INPUT_Y + INPUT_H / 2
+    draw_card(ax, *FUSION_BOX_1,
+              title="Feature Concatenation",
+              subtitle=r"$\mathbf{z}=[\mathbf{f}_{s}\,;\,\mathbf{f}_{t}]\in\mathbb{R}^{64}$",
+              face=COLOR_FUSION_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=14, sub_fs=13)
+    draw_card(ax, *FUSION_BOX_2,
+              title="Classification Head",
+              subtitle="Linear \u2192 GELU \u2192 Linear",
+              face=COLOR_FUSION_FACE, text=COLOR_TEXT_LIGHT,
+              title_fs=14, sub_fs=12)
+    draw_card(ax, *FUSION_BOX_3,
+              title="Binary Prediction",
+              subtitle="True vs. False Memory",
+              face=COLOR_NEUTRAL_FACE, text=COLOR_TEXT_DARK,
+              title_fs=17, sub_fs=12)
 
-    # Branching arrows: Input -> A1 (up) and Input -> B1 (down)
-    # zorder=10 forces these two specific arrows to render cleanly on top
-    # of every other element (boxes, shadows, text) in the figure.
-    draw_arrow(
-        ax,
-        (input_right_x, input_mid_y),
-        (A_X[0], TOP_Y + CARD_H / 2),
-        connectionstyle="arc3,rad=-0.28",
-        zorder=10,
-    )
-    draw_arrow(
-        ax,
-        (input_right_x, input_mid_y),
-        (B_X[0], BOTTOM_Y + CARD_H / 2),
-        connectionstyle="arc3,rad=0.28",
-        zorder=10,
-    )
+    # Feature Concatenation -> Classification Head
+    connect_down(ax, FUSION_BOX_1, FUSION_BOX_2)
+    # Classification Head -> Binary Prediction
+    connect_down(ax, FUSION_BOX_2, FUSION_BOX_3)
 
-    # Top branch internal arrows: A1 -> A2 -> A3
-    for i in range(2):
-        y_mid = TOP_Y + CARD_H / 2
-        draw_arrow(ax, (A_X[i] + CARD_W, y_mid), (A_X[i + 1], y_mid))
+    # ------------------------------------------------------------------------
+    # ARROWS -- branching (Input -> Spatial / Temporal) and merging
+    # (Spatial / Temporal -> Fusion). Every point is the box's true
+    # top/bottom-center, manually nudged by a fixed margin, per spec.
+    # ------------------------------------------------------------------------
+    input_bottom = box_bottom_center(*INPUT_BOX)          # (50, 85)
+    spatial_top = box_top_center(*SPATIAL_BOX_1)          # (25, 71)
+    temporal_top = box_top_center(*TEMPORAL_BOX_1)        # (75, 71)
 
-    # Bottom branch internal arrows: B1 -> B2 -> B3
-    for i in range(2):
-        y_mid = BOTTOM_Y + CARD_H / 2
-        draw_arrow(ax, (B_X[i] + CARD_W, y_mid), (B_X[i + 1], y_mid))
+    trunk_start = (input_bottom[0], input_bottom[1] - SAFE_MARGIN)
+    trunk_split_y = 74.0  # strictly below the label band (labels now at y=81)
 
-    # Merging arrows: A3 -> F1 (down) and B3 -> F1 (up)
-    fusion_left_x = F_X[0]
-    fusion_mid_y = FUSION_Y + FUSION_H / 2
+    # Straight trunk stub: Input -> split point (centered under Input,
+    # horizontally clear of both branch labels).
+    draw_arrow(ax, trunk_start, (50, trunk_split_y), rad=0.0)
 
-    draw_arrow(
-        ax,
-        (A_X[2] + CARD_W, TOP_Y + CARD_H / 2),
-        (fusion_left_x, fusion_mid_y),
-        connectionstyle="arc3,rad=0.28",
-    )
-    draw_arrow(
-        ax,
-        (B_X[2] + CARD_W, BOTTOM_Y + CARD_H / 2),
-        (fusion_left_x, fusion_mid_y),
-        connectionstyle="arc3,rad=-0.28",
-    )
+    # Diagonal branching arrows -- leave from two points 2 units apart
+    # (48 / 52) for a clean visual fork. FIX #1: curvature reduced
+    # (0.15 -> 0.08) so the bulge stays well clear of the (now higher,
+    # wider) branch labels above.
+    FORK_LEFT_X, FORK_RIGHT_X = 48.0, 52.0
+    draw_arrow(ax, (FORK_LEFT_X, trunk_split_y),
+               (spatial_top[0], spatial_top[1] + SAFE_MARGIN), rad=0.08)
+    draw_arrow(ax, (FORK_RIGHT_X, trunk_split_y),
+               (temporal_top[0], temporal_top[1] + SAFE_MARGIN), rad=-0.08)
 
-    # Fusion internal arrows: F1 -> F2 -> F3
-    for i in range(2):
-        y_mid = FUSION_Y + FUSION_H / 2
-        draw_arrow(ax, (F_X[i] + CARD_W, y_mid), (F_X[i + 1], y_mid))
+    spatial_bottom = box_bottom_center(*SPATIAL_BOX_3)    # (25, 32)
+    temporal_bottom = box_bottom_center(*TEMPORAL_BOX_3)  # (75, 32)
+    fusion_top = box_top_center(*FUSION_BOX_1)            # (50, 27)
+    fusion_cx = fusion_top[0]                             # 50
+
+    # FIX #2: the two merge arrows used to both target the identical
+    # point (50, join_y), causing their arrowheads to overlap into a
+    # black blob. Each now targets its own distinct x on the Feature
+    # Concatenation box's top border: teal -> fusion_cx - 8, orange ->
+    # fusion_cx + 8, both just above the box's true top edge
+    # (+ SAFE_MARGIN) so neither arrowhead pierces the purple card.
+    spatial_merge_target = (fusion_cx - 8, fusion_top[1] + SAFE_MARGIN)
+    temporal_merge_target = (fusion_cx + 8, fusion_top[1] + SAFE_MARGIN)
+
+    draw_arrow(ax, spatial_bottom, spatial_merge_target, rad=0.0,
+               shrinkA=2, shrinkB=5)
+    draw_arrow(ax, temporal_bottom, temporal_merge_target, rad=0.0,
+               shrinkA=2, shrinkB=5)
 
     # ------------------------------------------------------------------------
     # Title
@@ -404,10 +866,8 @@ def generate_figure7():
     fig.suptitle(
         "Figure 7: Architecture of the Dual-Branch Spatiotemporal Riemannian Mamba Network",
         x=0.5, ha="center", fontweight="bold", fontsize=16,
-        color=COLOR_TEXT_DARK, y=0.99,
+        color=COLOR_TEXT_DARK, y=0.95,
     )
-
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
 
     # ------------------------------------------------------------------------
     # Save outputs
