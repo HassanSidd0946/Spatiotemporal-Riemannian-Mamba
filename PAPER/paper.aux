@@ -1,0 +1,154 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\Newlabel{cor1}{1}
+\citation{basel,gdpr,sr117,bcbs239,iso27001,pci40}
+\citation{lewis2020rag,karpukhin2020dpr,colbert2020,splade2021,atlas2022}
+\citation{bender2021stochastic}
+\citation{sec10k,projectrepo}
+\citation{lewis2020rag}
+\citation{attention2017,bert2019,sbert2019}
+\citation{karpukhin2020dpr,colbert2020,splade2021,hyde2023,monoT52020,rankgpt2023}
+\citation{roberta2019,t52020,instructiontuning2022}
+\citation{selfrag2023}
+\citation{edge2024graphrag}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{Introduction}{section.1}{}}
+\citation{liu2024lostmiddle}
+\citation{truthfulqa2022,ragas2023,hotpotqa2018,fever2018}
+\citation{edgargraph,finkgsurvey,opencyc2018,finbert2020}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{2}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Taxonomy of Data Fusion in RAG Systems}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Trustworthiness and Evidence Dilution}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Knowledge Graphs and Scalable Fusion Architectures}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Proposed Framework: Multi-Source Heterogeneous Data Fusion}{2}{section.3}\protected@file@percent }
+\newlabel{sec:framework}{{3}{2}{Proposed Framework: Multi-Source Heterogeneous Data Fusion}{section.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Hybrid Retrieval and Score Fusion Mechanism. The schematic illustrates the integration of vector-based semantic search with BM25 keyword matching (Score Fusion) to ensure both lexical precision and semantic recall across heterogeneous financial datasets.}}{2}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig4_overview_architecture}{{1}{2}{Hybrid Retrieval and Score Fusion Mechanism. The schematic illustrates the integration of vector-based semantic search with BM25 keyword matching (Score Fusion) to ensure both lexical precision and semantic recall across heterogeneous financial datasets}{figure.caption.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Architectural comparison between Baseline Vector RAG and the proposed multi-source heterogeneous data fusion framework (Stratified GraphRAG). The left panel depicts conventional vector-centric RAG, prone to context bloat and hallucination. The right panel details our Lexical-Structural framework, which utilises triplet-based fusion and deterministic path verification. This design mandates lexical anchoring and bounded traversal to ensure every generated claim is traceably linked to a \texttt  {source\_chunk} identifier, fulfilling strict trustworthy AI requirements.}}{2}{figure.caption.3}\protected@file@percent }
+\newlabel{fig8_pipeline_main}{{2}{2}{Architectural comparison between Baseline Vector RAG and the proposed multi-source heterogeneous data fusion framework (Stratified GraphRAG). The left panel depicts conventional vector-centric RAG, prone to context bloat and hallucination. The right panel details our Lexical-Structural framework, which utilises triplet-based fusion and deterministic path verification. This design mandates lexical anchoring and bounded traversal to ensure every generated claim is traceably linked to a \texttt {source\_chunk} identifier, fulfilling strict trustworthy AI requirements}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Multi-Source Data Ingestion and Preprocessing}{2}{subsection.3.1}\protected@file@percent }
+\citation{neo4jmanual}
+\citation{cypher2018,robinson2015graphdb,angles2018propertygraphs}
+\citation{gpt4report}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Signal-to-noise analysis of paragraph-level vs.\ triplet-based fusion. Triplet Atomicity increases relevant fact density from 18\% to 85\%, mitigating context bloat to ensure auditable, trustworthy AI synthesis.}}{3}{figure.caption.4}\protected@file@percent }
+\newlabel{fig6_signal_noise}{{3}{3}{Signal-to-noise analysis of paragraph-level vs.\ triplet-based fusion. Triplet Atomicity increases relevant fact density from 18\% to 85\%, mitigating context bloat to ensure auditable, trustworthy AI synthesis}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Semantic Chunking for High-Fidelity Fusion}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Triplet Extraction and Knowledge Graph Ontology}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Entity Resolution and Heterogeneous Canonicalisation}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Scalable Implementation: Neo4j and LLM Governance}{3}{subsection.3.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Comparative analysis of the proposed structured heterogeneous data fusion architecture (top) versus standard unstructured Vector RAG baselines (bottom). Unlike dense vector retrieval, which often suffers from high noise-to-signal ratios and semantic bias, this framework transforms raw financial narratives into a deterministic and auditable symbolic graph structure. By utilising typed relationships and entity-centric mapping, the system ensures granular interpretability, explicitly linking every fused element back to its original source-anchored triplets to facilitate rigorous compliance verification and maintain end-to-end multi-source traceability.}}{3}{figure.caption.5}\protected@file@percent }
+\newlabel{fig7_structured_kg}{{4}{3}{Comparative analysis of the proposed structured heterogeneous data fusion architecture (top) versus standard unstructured Vector RAG baselines (bottom). Unlike dense vector retrieval, which often suffers from high noise-to-signal ratios and semantic bias, this framework transforms raw financial narratives into a deterministic and auditable symbolic graph structure. By utilising typed relationships and entity-centric mapping, the system ensures granular interpretability, explicitly linking every fused element back to its original source-anchored triplets to facilitate rigorous compliance verification and maintain end-to-end multi-source traceability}{figure.caption.5}{}}
+\citation{msmarco2016,trec2020}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Latent Space Bias vs.\ Entity Stratification. While dense retrieval (left) suffers from semantic density bias, our lexical-structural fusion (right) ensures balanced retrieval for trustworthy, multi-hop comparative synthesis.}}{4}{figure.caption.6}\protected@file@percent }
+\newlabel{fig10_robust_architecture}{{5}{4}{Latent Space Bias vs.\ Entity Stratification. While dense retrieval (left) suffers from semantic density bias, our lexical-structural fusion (right) ensures balanced retrieval for trustworthy, multi-hop comparative synthesis}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Formalizing Deterministic Data Fusion}{4}{section.4}\protected@file@percent }
+\newlabel{sec:formalization}{{4}{4}{Formalizing Deterministic Data Fusion}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Graph Definition and Heterogeneous Mapping}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Extraction Objective for Accurate Fusion}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Deterministic Path and Interpretability}{4}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Mega Node Mitigation and Stratified Scoring}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Retrieval Algorithm}{4}{subsection.4.5}\protected@file@percent }
+\citation{angles2018propertygraphs}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces \textbf  {Deterministic Lexical-Structural Fusion and Retrieval}}}{5}{algorithm.1}\protected@file@percent }
+\newlabel{alg:deterministic_retrieval}{{1}{5}{\textbf {Deterministic Lexical-Structural Fusion and Retrieval}}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Evaluation Metrics}{5}{subsection.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Performance, Ablation, and Failure Analysis}{5}{section.5}\protected@file@percent }
+\newlabel{sec:evaluation}{{5}{5}{Performance, Ablation, and Failure Analysis}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Benchmark Design and Heterogeneous Query Categories}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Latency and Scalability Analysis}{5}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Benchmark Query Category Breakdown}}{5}{table.caption.7}\protected@file@percent }
+\newlabel{tab:query_cats}{{1}{5}{Benchmark Query Category Breakdown}{table.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Latency vs.\ hallucination trade-off. Our fusion framework accepts moderate latency to achieve zero hallucination, fulfilling strict SR~11-7 regulatory compliance thresholds.}}{5}{figure.caption.8}\protected@file@percent }
+\newlabel{fig_latency_tradeoff}{{6}{5}{Latency vs.\ hallucination trade-off. Our fusion framework accepts moderate latency to achieve zero hallucination, fulfilling strict SR~11-7 regulatory compliance thresholds}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Impact of Fusion Constraints: An Ablation Study}{5}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Precision vs.\ Structural Complexity}{5}{subsection.5.4}\protected@file@percent }
+\citation{liu2024lostmiddle}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Hyperparameter Configuration for the Spatiotemporal Riemannian Mamba Network}}{6}{table.caption.9}\protected@file@percent }
+\newlabel{tab:hyperparams}{{2}{6}{Hyperparameter Configuration for the Spatiotemporal Riemannian Mamba Network}{table.caption.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Performance Comparison: Leave-One-Subject-Out (LOSO) Cross-Validation}}{6}{table.caption.10}\protected@file@percent }
+\newlabel{tab:sota_comparison}{{3}{6}{Performance Comparison: Leave-One-Subject-Out (LOSO) Cross-Validation}{table.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Precision@k degradation analysis. Our fusion framework (GraphRAG) maintains stability across retrieval depths, while Baseline Vector RAG degrades sharply, compromising trustworthy AI reliability.}}{6}{figure.caption.11}\protected@file@percent }
+\newlabel{fig1}{{7}{6}{Precision@k degradation analysis. Our fusion framework (GraphRAG) maintains stability across retrieval depths, while Baseline Vector RAG degrades sharply, compromising trustworthy AI reliability}{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Architectural behaviour by complexity. Our fusion framework employs safe refusal to mitigate hallucinations as difficulty scales, ensuring trustworthy AI performance through strict structural grounding.}}{6}{figure.caption.12}\protected@file@percent }
+\newlabel{fig2}{{8}{6}{Architectural behaviour by complexity. Our fusion framework employs safe refusal to mitigate hallucinations as difficulty scales, ensuring trustworthy AI performance through strict structural grounding}{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Cumulative recall by depth $K$. Our fusion framework converges with the baseline despite the metric bias at low $K$, ensuring trustworthy AI evidence accumulation through concise triplets.}}{6}{figure.caption.13}\protected@file@percent }
+\newlabel{fig5_cumulative_recall}{{9}{6}{Cumulative recall by depth $K$. Our fusion framework converges with the baseline despite the metric bias at low $K$, ensuring trustworthy AI evidence accumulation through concise triplets}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Failure Mode Taxonomy}{6}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Token Efficiency of the Scalable Fusion Architecture}{6}{subsection.5.6}\protected@file@percent }
+\citation{ieeeeadd,kearns2019ethical}
+\citation{sr117}
+\citation{gdpr,nistairmf,euaiact2024}
+\citation{euaiact2024,occaiprinciples,fcaai2024}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces MRR analysis for implicit queries. Vector RAG fails completely ($0.00$), while our fusion framework ($0.087$) bridges lexical gaps via structural anchoring. The architecture leverages safe refusal for ambiguous intents to ensure trustworthy AI standards.}}{7}{figure.caption.14}\protected@file@percent }
+\newlabel{fig3}{{10}{7}{MRR analysis for implicit queries. Vector RAG fails completely ($0.00$), while our fusion framework ($0.087$) bridges lexical gaps via structural anchoring. The architecture leverages safe refusal for ambiguous intents to ensure trustworthy AI standards}{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion: Regulatory Compliance and Trustworthy Fusion}{7}{section.6}\protected@file@percent }
+\newlabel{sec:discussion}{{6}{7}{Discussion: Regulatory Compliance and Trustworthy Fusion}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Explanation in Analyst Processes}{7}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Alignment with SR~11-7 and GDPR}{7}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Scalable Governance for High-Risk AI}{7}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Threats to Validity}{7}{section.7}\protected@file@percent }
+\newlabel{sec:threats}{{7}{7}{Threats to Validity}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Internal Validity}{7}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}External Validity}{7}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Construct Validity}{7}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Future Work}{7}{section.8}\protected@file@percent }
+\newlabel{sec:future}{{8}{7}{Future Work}{section.8}{}}
+\bibcite{basel}{{1}{}{{}}{{}}}
+\bibcite{gdpr}{{2}{}{{}}{{}}}
+\bibcite{sr117}{{3}{}{{}}{{}}}
+\bibcite{bcbs239}{{4}{}{{}}{{}}}
+\bibcite{iso27001}{{5}{}{{}}{{}}}
+\bibcite{pci40}{{6}{}{{}}{{}}}
+\bibcite{lewis2020rag}{{7}{}{{}}{{}}}
+\bibcite{karpukhin2020dpr}{{8}{}{{}}{{}}}
+\bibcite{colbert2020}{{9}{}{{}}{{}}}
+\bibcite{splade2021}{{10}{}{{}}{{}}}
+\bibcite{atlas2022}{{11}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Evolution of Temporal Knowledge Graphs}{8}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Neuro-Symbolic Verification Methods}{8}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}SLM Distillation for Scalable Extraction}{8}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Multi-Source Fusion with XBRL}{8}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{8}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{8}{Conclusion}{section.9}{}}
+\bibcite{bender2021stochastic}{{12}{}{{}}{{}}}
+\bibcite{hyde2023}{{13}{}{{}}{{}}}
+\bibcite{edge2024graphrag}{{14}{}{{}}{{}}}
+\bibcite{attention2017}{{15}{}{{}}{{}}}
+\bibcite{bert2019}{{16}{}{{}}{{}}}
+\bibcite{roberta2019}{{17}{}{{}}{{}}}
+\bibcite{sbert2019}{{18}{}{{}}{{}}}
+\bibcite{t52020}{{19}{}{{}}{{}}}
+\bibcite{instructiontuning2022}{{20}{}{{}}{{}}}
+\bibcite{liu2024lostmiddle}{{21}{}{{}}{{}}}
+\bibcite{truthfulqa2022}{{22}{}{{}}{{}}}
+\bibcite{selfrag2023}{{23}{}{{}}{{}}}
+\bibcite{ragas2023}{{24}{}{{}}{{}}}
+\bibcite{hotpotqa2018}{{25}{}{{}}{{}}}
+\bibcite{fever2018}{{26}{}{{}}{{}}}
+\bibcite{msmarco2016}{{27}{}{{}}{{}}}
+\bibcite{trec2020}{{28}{}{{}}{{}}}
+\bibcite{monoT52020}{{29}{}{{}}{{}}}
+\bibcite{rankgpt2023}{{30}{}{{}}{{}}}
+\bibcite{edgargraph}{{31}{}{{}}{{}}}
+\bibcite{finkgsurvey}{{32}{}{{}}{{}}}
+\bibcite{opencyc2018}{{33}{}{{}}{{}}}
+\bibcite{finbert2020}{{34}{}{{}}{{}}}
+\bibcite{neo4jmanual}{{35}{}{{}}{{}}}
+\bibcite{cypher2018}{{36}{}{{}}{{}}}
+\bibcite{angles2018propertygraphs}{{37}{}{{}}{{}}}
+\bibcite{robinson2015graphdb}{{38}{}{{}}{{}}}
+\bibcite{gpt4report}{{39}{}{{}}{{}}}
+\bibcite{ieeeeadd}{{40}{}{{}}{{}}}
+\bibcite{kearns2019ethical}{{41}{}{{}}{{}}}
+\bibcite{nistairmf}{{42}{}{{}}{{}}}
+\bibcite{euaiact2024}{{43}{}{{}}{{}}}
+\bibcite{occaiprinciples}{{44}{}{{}}{{}}}
+\bibcite{fcaai2024}{{45}{}{{}}{{}}}
+\bibcite{sec10k}{{46}{}{{}}{{}}}
+\bibcite{projectrepo}{{47}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{10}

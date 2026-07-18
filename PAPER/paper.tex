@@ -1,0 +1,680 @@
+%% elsarticle-based conversion of the IEEEtran paper
+%% "Deterministic Data Fusion for FinTech: Formalizing Stratified Knowledge
+%%  Graphs for Zero Hallucination Compliance"
+%%
+%% FIX APPLIED: All sentences whose continuation was cut off after a \cite{}
+%% command have been repaired so that the full sentence text is preserved on
+%% a single logical paragraph line, eliminating the truncation visible in the
+%% compiled PDF.
+
+\documentclass[final,5p,times,twocolumn]{elsarticle}
+
+\documentclass[final,5p,times,twocolumn]{elsarticle}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage{graphicx}
+\graphicspath{{figures/pics/}{figures/}{./}}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{microtype}
+
+\biboptions{sort&compress}   % ← SIRF YEH ADD KARO
+
+\begin{document}
+
+%% ---------------------------------------------------------------
+%%  Theorem-like environments
+%% ---------------------------------------------------------------
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+%% ---------------------------------------------------------------
+%%  Caption style
+%% ---------------------------------------------------------------
+\captionsetup[figure]{font=footnotesize}
+
+%% ---------------------------------------------------------------
+%%  Safe figure inclusion helper
+%% ---------------------------------------------------------------
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\parbox[c][0.17\textheight][c]{0.9\linewidth}{%
+      \centering\small Figure placeholder:\\ \texttt{\detokenize{#2}}}}%
+  }%
+}
+
+%% ---------------------------------------------------------------
+\begin{document}
+
+%% ---------------------------------------------------------------
+%%  Journal name (update as appropriate)
+%% ---------------------------------------------------------------
+\journal{Expert Systems with Applications}
+
+%% ---------------------------------------------------------------
+%%  Front matter
+%% ---------------------------------------------------------------
+\begin{frontmatter}
+
+\title{Deterministic Data Fusion for FinTech: Formalizing Stratified Knowledge Graphs for Zero Hallucination Compliance}
+
+%% Authors and affiliations
+\author{Muhammad Adil Usmani\corref{cor1}}
+\author{Muhammad Hassan Siddiqui}
+\author{Hurr Ali Syed}
+\cortext[cor1]{Corresponding author. E-mail: muhammadaadilusmani@gmail.com}
+\address{Department of Computer Science, University of Central Punjab, Lahore, Pakistan.\\ E-mail: \{muhammadaadilusmani, hassansiddiqui0946, hurrshah151214\}@gmail.com}
+
+%% ---------------------------------------------------------------
+%%  Abstract
+%% ---------------------------------------------------------------
+\begin{abstract}
+Verifiable provenance, reproducible execution, and conservative failure behavior are the requirements of financial compliance workflows. Standard Retrieval Augmented Generation pipelines usually only retrieve broad semantically similar passages, which increases context noise and allows unsupported synthesis. In this paper, we present a Lexical Structural GraphRAG architecture for fusion of multi-source heterogeneous data in SEC~10-K analysis that integrates strict lexical anchoring with deterministic graph traversal. We formalize two principles. The first is \emph{Triplet Atomicity}, which necessitates that evidence be represented and retrieved as typed subject predicate object facts instead of mixed prose chunks. The second is a \emph{Deterministic Path Requirement}, which prohibits answer synthesis if there is no bounded structural path linking the query entities within the knowledge graph. With a 35-query benchmark covering direct, implicit, comparative, and multi-hop financial questions, the resulting system attains 100\% execution success, average latency $\sim$18~seconds, Recall@K\,=\,0.86, faithfulness\,=\,0.97, and 0\% hallucination on unretrieved context through strict refusal. In high-risk compliance settings, grounding at the triplet level with deterministic gating appears to better prepare for audits and perform comparative reasoning than vector-only baselines.
+\end{abstract}
+
+%% ---------------------------------------------------------------
+%%  Keywords
+%% ---------------------------------------------------------------
+\begin{keyword}
+Data Fusion \sep Multi-source Heterogeneous Data \sep GraphRAG \sep Triplet Atomicity \sep Trustworthy AI \sep Deterministic Retrieval \sep SEC 10-K \sep Explainable AI (XAI) \sep Financial Compliance
+\end{keyword}
+
+\end{frontmatter}
+
+%% ================================================================
+\section{Introduction}
+\label{sec:introduction}
+%% ================================================================
+
+In financial processes, the problem with large language models lies not in their fluency, but rather their reliability. In regulated settings, all generated sentences must be backed by evidence and remain auditable \cite{basel,gdpr,sr117,bcbs239,iso27001,pci40}. Retrieval Augmented Generation (RAG) achieves higher factual accuracy than closed-book generation while inheriting a significant weakness: semantic relevance does not guarantee evidential adequacy \cite{lewis2020rag,karpukhin2020dpr,colbert2020,splade2021,atlas2022}. Integrating extensive text into the model context can introduce irrelevant sentences as noise, leading the model to hallucinate spurious claims that are difficult to justify.
+
+Here, we introduce a paradigm for multi-source heterogeneous data fusion instead of simple paragraph retrieval. Our technique integrates unstructured financial text with symbolic searching and consists of three key elements. First, \textit{Triplet Atomicity} depicts evidence as explicit typed facts in the form of triplets (subject, predicate, object). Second, a \textit{Deterministic Path Requirement} enables generating answers only for controlled structural paths between anchored query terms, which supports high interpretability. Third, \textit{Stratified Scoring} sorts candidate evidence by intent and constrained node centrality to prevent high-degree institutional nodes from monopolizing retrieval results.
+
+This refusal policy alleviates concerns regarding stochastic generation risk \cite{bender2021stochastic} and supports the trustworthy AI principles of SEC filing analysis \cite{sec10k,projectrepo}. A mistaken refusal in a compliance situation can be easily verified by a human analyst, while a hallucinated claim could result in severe regulatory penalties, legal liabilities, and capital losses.
+
+% \vspace{-5pt}
+\subsection*{Contributions}
+% \vspace{-3pt}
+This paper makes five contributions.
+\begin{enumerate}
+  \item It introduces Triplet Atomicity as a mechanism for grounding evidence within a provenance-mapped financial knowledge graph, enabling high-fidelity data fusion.
+  \item It formalizes a Deterministic Path Requirement with bounded-hop traversal and stratified scoring, significantly enhancing the interpretability of complex financial reasoning.
+  \item It presents a comprehensive multi-source heterogeneous data fusion architecture (Lexical Structural GraphRAG) for SEC~10-K analysis, covering the entire pipeline from semantic chunking to refusal-gated synthesis.
+  \item It provides a rigorous evaluation of the system using a 35-query benchmark, including ablation studies, error taxonomy, and analysis of token efficiency and latency.
+  \item It demonstrates how the proposed architecture fulfils Trustworthy AI requirements and aligns with regulatory frameworks such as SR~11-7, GDPR, and emerging AI governance standards.
+\end{enumerate}
+
+%% ================================================================
+\section{Related Work}
+\label{sec:related}
+%% ================================================================
+
+\subsection{Taxonomy of Data Fusion in RAG Systems}
+
+Modern RAG systems are generally classified into three categories based on their strategies for data fusion. \textit{Naive RAG} utilises basic vector similarity to fetch $k$ chunks for generation \cite{lewis2020rag}, relying on dense embeddings produced by pre-trained language models \cite{attention2017,bert2019,sbert2019}. \textit{Modular RAG} introduces iterative steps, such as reranking and hybrid retrieval, to fine-tune the fusion process \cite{karpukhin2020dpr,colbert2020,splade2021,hyde2023,monoT52020,rankgpt2023}. More capable backbone models, including instruction-tuned and encoder-decoder architectures, have further extended the retrieval pipeline \cite{roberta2019,t52020,instructiontuning2022}. \textit{Self-RAG} \cite{selfrag2023} represents a notable Modular RAG variant that dynamically decides when to retrieve and critiques its own outputs. \textit{GraphRAG} \cite{edge2024graphrag} represents a more advanced formulation of multi-source heterogeneous data fusion, employing explicit entity-relation structures instead of flat semantic neighbourhoods. We extend this third class by incorporating deterministic lexical constraints and refusal gating, modelling data fusion as a controlled, auditable process rather than a stochastic one.
+
+\subsection{Trustworthiness and Evidence Dilution}
+
+Evidence in long narratives is frequently obscured, causing large language models to lose reliability, a phenomenon often called the ``Lost in the Middle'' effect \cite{liu2024lostmiddle}. Research on retrieval faithfulness indicates that high benchmark performance can often mask underlying hallucinations \cite{truthfulqa2022,ragas2023,hotpotqa2018,fever2018}. In compliance settings, this ``evidence dilution'' poses a significant risk. To mitigate this, we employ \textit{Triplet Atomicity} to convert noisy prose into unitary, fact-based statements. By substituting resolved facts for long paragraphs, we ensure our system functions as a trustworthy and responsible fusion system with clearly auditable evidentiary boundaries.
+
+\subsection{Knowledge Graphs and Scalable Fusion Architectures}
+
+Prior studies on financial knowledge graphs have emphasised the importance of entity normalisation and graph analytics for risk monitoring \cite{edgargraph,finkgsurvey,opencyc2018,finbert2020}. However, most existing systems are oriented towards visualisation dashboards rather than retrieval-constrained generation. Our Lexical Structural Hybrid is an efficient and scalable fusion architecture distinguished by three pillars: (1)~lexical anchoring for node entry, (2)~deterministic path verification for synthesis permission, and (3)~a refusal mechanism that provides an interpretable safety control. It moves beyond basic document intelligence toward a verifiable compliance framework.
+
+%% ================================================================
+\section{Proposed Framework: Multi-Source Heterogeneous Data Fusion}
+\label{sec:framework}
+%% ================================================================
+
+We define our architecture as a scalable fusion system designed to bridge the gap between unstructured financial narratives and structured symbolic logic. The pipeline operates in four primary phases: document ingestion, triplet-based data fusion, entity canonicalisation, and lexical anchoring with deterministic traversal. Central to this design is the preservation of a ``provenance chain'', ensuring that every generated claim remains trustworthy and fully auditable.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[trim={0 27pt 0 0}, clip, width=0.94\linewidth]{image_d5e5de.png}
+  \captionsetup{labelfont=bf}
+  \caption{Hybrid Retrieval and Score Fusion Mechanism. The schematic illustrates the integration of vector-based semantic search with BM25 keyword matching (Score Fusion) to ensure both lexical precision and semantic recall across heterogeneous financial datasets.}
+  \label{fig4_overview_architecture}
+\end{figure}
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{plot_8_pipeline_comparison.png}
+  \captionsetup{labelfont=bf}
+  \caption{Architectural comparison between Baseline Vector RAG and the proposed multi-source heterogeneous data fusion framework (Stratified GraphRAG). The left panel depicts conventional vector-centric RAG, prone to context bloat and hallucination. The right panel details our Lexical-Structural framework, which utilises triplet-based fusion and deterministic path verification. This design mandates lexical anchoring and bounded traversal to ensure every generated claim is traceably linked to a \texttt{source\_chunk} identifier, fulfilling strict trustworthy AI requirements.}
+  \label{fig8_pipeline_main}
+\end{figure}
+
+\subsection{Multi-Source Data Ingestion and Preprocessing}
+
+SEC~10-K filings are handled by an asynchronous ingestion routine structured for multi-source scalability. HTML structures are parsed into semantically consistent units, where each chunk preserves rich metadata including filing identifiers, issuer IDs, and section-specific offsets. This ensures that the subsequent data fusion layers maintain a direct link to the original regulatory source.
+
+\subsection{Semantic Chunking for High-Fidelity Fusion}
+
+To maintain topical integrity within complex sections like MD\&A, we employ semantic chunking in place of standard fixed-window methods. By closing chunks at thematic shifts rather than token limits, we eliminate ``cross-topic noise'', a vital condition for accurate triplet extraction and for preventing evidence dilution during the fusion process.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{plot_6_signal_to_noise.png}
+  \captionsetup{labelfont=bf}
+  \caption{Signal-to-noise analysis of paragraph-level vs.\ triplet-based fusion. Triplet Atomicity increases relevant fact density from 18\% to 85\%, mitigating context bloat to ensure auditable, trustworthy AI synthesis.}
+  \label{fig6_signal_noise}
+\end{figure}
+
+\subsection{Triplet Extraction and Knowledge Graph Ontology}
+
+To transform unstructured prose into a structured fusion layer, we utilise an LLM-driven extraction module with a strict ontology. We define four primary node classes: \textit{Entity}, \textit{Obligation}, \textit{RiskFactor}, and \textit{Metric}. Predicates like \textsc{reports} and \textsc{subject\_to} formalise these relationships. By representing evidence as (subject, predicate, object) triplets, we achieve \textit{Triplet Atomicity}, which provides a more granular and auditable structure than raw text blocks.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.96\linewidth]{plot_7_structured_knowledge_graph.png}
+  \captionsetup{labelfont=bf}
+  \caption{Comparative analysis of the proposed structured heterogeneous data fusion architecture (top) versus standard unstructured Vector RAG baselines (bottom). Unlike dense vector retrieval, which often suffers from high noise-to-signal ratios and semantic bias, this framework transforms raw financial narratives into a deterministic and auditable symbolic graph structure. By utilising typed relationships and entity-centric mapping, the system ensures granular interpretability, explicitly linking every fused element back to its original source-anchored triplets to facilitate rigorous compliance verification and maintain end-to-end multi-source traceability.}
+  \label{fig7_structured_kg}
+\end{figure}
+
+\subsection{Entity Resolution and Heterogeneous Canonicalisation}
+
+We implement a three-tier canonicalisation strategy to maintain the integrity of our heterogeneous data fusion. First, deterministic alias dictionaries collapse known variants (e.g., ``JPM'' to ``JPMorgan Chase \& Co.''). Second, normalised string matching resolves minor formatting variances. Finally, fuzzy Jaccard similarity serves as a fallback for ambiguous entities. This multi-layered approach ensures that data from disparate filing sections are fused into a single, coherent canonical node.
+
+% \subsection{Scalable Implementation: Neo4j and LLM Governance}
+
+% In the persistence layer, Neo4j is optimised with composite indexes to ensure high-speed retrieval \cite{neo4jmanual}. Nodes hold multi-dimensional attributes such as embeddings, PageRank, and source metadata, while edges maintain confidence scores. To guarantee the system remains a responsible AI framework, the extraction model utilises a strict JSON schema and low temperature ($T=0.1$) to minimise variance and ensure reproducibility.
+
+\subsection{Scalable Implementation: Neo4j and LLM Governance}
+
+In the persistence layer, Neo4j is optimised with composite indexes to ensure high-speed retrieval \cite{neo4jmanual}. Graph query languages such as Cypher provide expressive traversal capabilities over property graphs, enabling efficient structured retrieval \cite{cypher2018,robinson2015graphdb,angles2018propertygraphs}. Nodes hold multi-dimensional attributes such as embeddings, PageRank, and source metadata, while edges maintain confidence scores. To guarantee the system remains a responsible AI framework, the extraction model utilises GPT-4 \cite{gpt4report} with a strict JSON schema and low temperature ($T=0.1$) to minimise variance and ensure reproducibility.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.96\linewidth]{plot_robust_architecture_plot_10.png}
+  \captionsetup{labelfont=bf}
+  \caption{Latent Space Bias vs.\ Entity Stratification. While dense retrieval (left) suffers from semantic density bias, our lexical-structural fusion (right) ensures balanced retrieval for trustworthy, multi-hop comparative synthesis.}
+  \label{fig10_robust_architecture}
+\end{figure}
+
+%% ================================================================
+\section{Formalizing Deterministic Data Fusion}
+\label{sec:formalization}
+%% ================================================================
+
+\subsection{Graph Definition and Heterogeneous Mapping}
+
+\begin{definition}[\textit{Provenance-Augmented Fusion Graph}]
+We represent the fused financial knowledge base as a labeled property graph:
+\begin{equation}
+  G = (V, E, L, \Phi),
+\end{equation}
+where $V$ is the node set, $E \subseteq V \times V$ is the directed edge set, and $L$ is a typed label space. The function $\Phi : V \cup E \rightarrow \mathcal{C}$ ensures that every fused element is anchored to its original source chunk set $\mathcal{C}$, maintaining multi-source traceability.
+\end{definition}
+
+\begin{definition}[\textit{Triplet Atomicity for Trustworthy AI}]
+A triplet $t = (s, p, o)$ satisfies Triplet Atomicity if and only if:
+\begin{equation}
+  \Phi(t) = c \in \mathcal{C},
+\end{equation}
+meaning the claim cannot be decomposed into sub-claims with differing provenance mappings. This ensures that every fact in our fusion system remains a coherent, auditable unit, effectively mitigating cross-context hallucinations.
+\end{definition}
+
+\begin{remark}
+Triplet Atomicity is significantly stricter than generic extraction. It precludes ``synthetic inference'' across chunk boundaries, a major cause of unsupported claims in standard RAG pipelines.
+\end{remark}
+
+\subsection{Extraction Objective for Accurate Fusion}
+
+For any heterogeneous source chunk $c \in \mathcal{C}$, our goal is to maximise factual fidelity while minimising the injection of unsupported relations. We formalise this trustworthy AI constraint as:
+\begin{equation}
+  \min_{\theta} \; \mathbb{P}(\text{Hallucination} \mid c) \quad \text{subject to} \quad \Phi(t)=c, \; \forall t \in T(c).
+\end{equation}
+This objective informs our schema constraints and prompt engineering, ensuring that the resulting data fusion is based purely on evidence.
+
+\subsection{Deterministic Path and Interpretability}
+
+\begin{definition}[\textit{Valid Structural Fusion Path}]
+For anchored query entities $u, v \in V$, a valid path for interpretable reasoning exists if:
+\begin{equation}
+  \exists\; \pi(u,v) = \langle e_1, e_2, \ldots, e_k \rangle \subseteq E \quad \text{s.t.} \quad d(u,v) = k \leq \tau,
+\end{equation}
+where $\tau$ is the maximum hop bound. This ensures the system only generates answers where a direct, bounded relationship is present in the graph.
+\end{definition}
+
+\begin{proposition}[\textit{Refusal Correctness and Safety}]
+If anchored entities lack a valid structural path, the system triggers an explicit refusal. This deterministic gating provides a verifiable provenance chain, fulfilling the requirements for high-risk financial compliance.
+\end{proposition}
+
+The refusal predicate is
+\begin{equation}
+  \mathcal{R}(q) =
+  \begin{cases}
+    \textsc{refusal}, & \text{if } A = \emptyset \text{ or no valid path exists},\\
+    \textsc{answer},  & \text{otherwise},
+  \end{cases}
+\end{equation}
+where $A$ is the anchor set resolved from the query.
+
+\subsection{Mega Node Mitigation and Stratified Scoring}
+
+To ensure our scalable fusion architecture remains unbiased, we mitigate the influence of high-degree institutional ``mega-nodes'' that can monopolise retrieval. We impose a degree cap, $\deg(n) < \kappa$, and rank candidates using a stratified scoring function that combines lexical relevance with structural centrality:
+\begin{equation}
+  S_{\mathrm{final}}(e)=W_{\mathrm{lexical}}(e)+\ln(\mathrm{PR}(e)+1),
+\end{equation}
+where $W_{\mathrm{lexical}}(e)$ is the lexical overlap and $\mathrm{PR}(e)$ is the PageRank centrality. This prevents global hubs from crowding out specific, local evidence.
+
+\subsection{Retrieval Algorithm}
+
+\begin{algorithm}[htbp]
+  \caption{\textbf{Deterministic Lexical-Structural Fusion and Retrieval}}
+  \label{alg:deterministic_retrieval}
+  \begin{algorithmic}[1]
+    \REQUIRE Query $q$, graph $G=(V,E,L,\Phi)$, hop bound $\tau$, degree cap $\kappa$, top $k$
+    \ENSURE Answer with source pointers, or explicit \textsc{refusal}
+    \STATE Extract entity mentions $Q_E$ from $q$
+    \STATE Resolve $Q_E$ to canonical anchor set $A \subseteq V$
+    \IF{$A = \emptyset$}
+      \STATE \textbf{return} \textsc{refusal}
+    \ENDIF
+    \STATE Build candidate subgraph with $\deg(n) < \kappa$
+    \STATE Execute bounded traversal from each anchor with depth $\leq \tau$
+    \IF{no valid path satisfies query constraints}
+      \STATE \textbf{return} \textsc{refusal}
+    \ENDIF
+    \FOR{each candidate edge $e$ on retrieved paths}
+      \STATE Compute $S_{\mathrm{final}}(e)$
+    \ENDFOR
+    \STATE Select top $k$ triplets ranked by $S_{\mathrm{final}}$
+    \STATE Collect provenance mappings $\Phi(t)$ for all selected triplets
+    \STATE Synthesise answer constrained strictly to retrieved triplets
+    \STATE \textbf{return} \textsc{answer} with \texttt{source\_chunk} pointers
+  \end{algorithmic}
+\end{algorithm}
+
+\noindent\textbf{Computational Analysis.} The overhead for graph construction scales linearly as $\mathcal{O}(|V|+|E|)$. When performing bounded traversals from $|A|$ anchors at a maximum depth $\tau$, the execution complexity is $\mathcal{O}(|A| \cdot b^{\tau})$. Here, $b$ signifies the average branching factor as restricted by our degree capping mechanism. In the context of compliance-based retrieval where hop bounds are typically kept small, this approach ensures the system remains computationally tractable for real-time application.
+
+\subsection{Evaluation Metrics}
+
+Contextual recall over the expected chunks of evidence is used to evaluate retrieval quality \cite{msmarco2016,trec2020}:
+\begin{equation}
+  \mathrm{Recall@K} = \frac{|\mathcal{R}_K \cap \mathcal{E}|}{|\mathcal{E}|},
+\end{equation}
+where $\mathcal{R}_K$ consists of the top $K$ retrieved chunks and $\mathcal{E}$ consists of annotated expected evidence chunks. Generation quality is evaluated by faithfulness, hallucination rate, and refusal correctness.
+
+%% ================================================================
+\section{Performance, Ablation, and Failure Analysis}
+\label{sec:evaluation}
+%% ================================================================
+
+\subsection{Benchmark Design and Heterogeneous Query Categories}
+
+To evaluate our multi-source heterogeneous data fusion framework, we utilised a specialised benchmark comprising 35 queries across four difficulty tiers. \textit{Direct queries} focus on straightforward, single-fact retrieval. \textit{Implicit queries} require lexical bridging to align natural language with our canonical schema. \textit{Comparative queries} necessitate simultaneous traversals from dual entity anchors. Finally, \textit{multi-hop queries} challenge the system to identify structural paths through intermediary nodes. Table~\ref{tab:query_cats} summarises this difficulty distribution and the resulting refusal behaviour.
+
+\begin{table}[htbp]
+  \caption{Benchmark Query Category Breakdown}
+  \label{tab:query_cats}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    Category    & Count & Avg.\ Hops & Refusal Rate \\
+    \midrule
+    Direct      & 12    & 1.0        & 8.3\%        \\
+    Implicit    & 8     & 1.5        & 62.5\%       \\
+    Comparative & 9     & 2.1        & 44.4\%       \\
+    Multi-hop   & 6     & 2.8        & 33.3\%       \\
+    \midrule
+    Overall     & 35    & 1.8        & 42.8\%       \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Latency and Scalability Analysis}
+
+Our framework achieved a 100\% execution success rate with a mean end-to-end latency of approximately 18~seconds. Analytical profiling indicates that answer synthesis remains the primary latency contributor, while anchor resolution and graph traversal are highly efficient. Notably, traversal latency exhibited sub-linear scaling, confirming that our scalable fusion architecture remains computationally manageable even as the financial corpus expands \cite{angles2018propertygraphs}.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=1.0\linewidth]{plot_fintech_latency_hallucination_tradeoff_plot_9.png}
+  \captionsetup{labelfont=bf}
+  \caption{Latency vs.\ hallucination trade-off. Our fusion framework accepts moderate latency to achieve zero hallucination, fulfilling strict SR~11-7 regulatory compliance thresholds.}
+  \label{fig_latency_tradeoff}
+\end{figure}
+
+\subsection{Impact of Fusion Constraints: An Ablation Study}
+
+Table~\ref{tab:ablation} highlights the necessity of our specific architectural constraints. Removing PageRank reweighting increased ``hub dominance,'' leading to a precision drop in comparative queries. Replacing semantic chunking with random partitioning degraded triplet quality due to fragmented evidence boundaries. Most critically, disabling the refusal mechanism yielded higher coverage but introduced significant hallucinations (14\%). This proves that deterministic gating is vital for a trustworthy AI implementation in regulated finance.
+
+% \begin{table}[htbp]
+%   \caption{Ablation Results on the 35-Query Benchmark}
+%   \label{tab:ablation}
+%   \centering
+%   \begin{tabular}{lccc}
+%     \toprule
+%     Configuration    & Recall@K & Faithfulness & Hallucination \\
+%     \midrule
+%     Full system      & 0.86     & 0.97         & 0.00          \\
+%     No PageRank term & 0.83     & 0.92         & 0.03          \\
+%     Random chunking  & 0.74     & 0.90         & 0.04          \\
+%     No refusal gate  & 0.87     & 0.81         & 0.14          \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameter Configuration for the Spatiotemporal Riemannian Mamba Network}
+\label{tab:hyperparams}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component / Parameter} & \textbf{Value} \\ \midrule
+\textbf{Riemannian Spatial Branch} & \\
+Covariance Estimator & SCM with Tikhonov Regularization \\
+Regularization Penalty ($\alpha$) & $10^{-4}$ \\
+Tangent Space Reference & Subject-specific Fréchet Mean \\ \midrule
+\textbf{Mamba Temporal Branch} & \\
+Number of Layers & 2 \\
+State Dimension ($d_{state}$) & 16 \\
+Expansion Factor & 2 \\
+Sequence Length ($T$) & 500 (approx. 1 second at 500Hz) \\ \midrule
+\textbf{Optimization \& Training} & \\
+Optimizer & AdamW \\
+Learning Rate & $10^{-3}$ \\
+Batch Size & 32 \\
+Loss Function & Cross-Entropy \\ \bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h]
+\centering
+\caption{Performance Comparison: Leave-One-Subject-Out (LOSO) Cross-Validation}
+\label{tab:sota_comparison}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Model / Architecture} & \textbf{Calibration Type} & \textbf{Mean LOSO Accuracy (\%)} \\ \midrule
+Chance Level (Theoretical) & - & 50.00 \\
+Baseline SVM (Riemannian) & Zero-Shot & 51.30 \\
+EEGNet (Standard CNN) & Zero-Shot & 52.14 \\
+Spatiotemporal Mamba (Baseline) & Zero-Shot & 55.53 \\ \midrule
+Spatiotemporal Mamba + EA & Zero-Shot & 55.52 \\
+\textbf{Ours: Riemannian Mamba + EA} & \textbf{Subspace Shrinkage} & \textbf{67.79} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Precision vs.\ Structural Complexity}
+
+While vector-only baselines often show high recall by retrieving large text blocks, their precision declines sharply at higher hop complexities due to ``context bloat'' and semantic noise. In contrast, our graph-constrained method maintains high precision by restricting the LLM context to path-relevant atomic facts, ensuring interpretability and consistency in the results.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{fig1_precision_degradation.png}
+  \captionsetup{labelfont=bf,font=scriptsize}
+  \caption{Precision@k degradation analysis. Our fusion framework (GraphRAG) maintains stability across retrieval depths, while Baseline Vector RAG degrades sharply, compromising trustworthy AI reliability.}
+  \label{fig1}
+\end{figure}
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+\centering
+  \includegraphics[width=0.8\linewidth]{fig2_behavior_complexity.png}
+  \captionsetup{labelfont=bf}
+  \caption{Architectural behaviour by complexity. Our fusion framework employs safe refusal to mitigate hallucinations as difficulty scales, ensuring trustworthy AI performance through strict structural grounding.}
+  \label{fig2}
+\end{figure}
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.88\linewidth]{plot_5_cumulative_recall.png}
+  \captionsetup{labelfont=bf}
+  \caption{Cumulative recall by depth $K$. Our fusion framework converges with the baseline despite the metric bias at low $K$, ensuring trustworthy AI evidence accumulation through concise triplets.}
+  \label{fig5_cumulative_recall}
+\end{figure}
+
+\subsection{Failure Mode Taxonomy}
+
+We identify three primary failure classes: (1)~Lexical Gap Refusal, where user terminology fails to resolve to canonical anchors; (2)~Partial Path Failure, where only one side of a comparative query is found; and (3)~Hub Saturation, where institutional mega-nodes dominate retrieval. Our stratified scoring strategy substantially alleviates this third category, ensuring a balanced evidence retrieval process.
+
+% \begin{figure}[htbp]
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{fig3_semantic_gap_implicit.png}
+  \captionsetup{labelfont=bf}
+  \caption{MRR analysis for implicit queries. Vector RAG fails completely ($0.00$), while our fusion framework ($0.087$) bridges lexical gaps via structural anchoring. The architecture leverages safe refusal for ambiguous intents to ensure trustworthy AI standards.}
+  \label{fig3}
+\end{figure}
+
+\subsection{Token Efficiency of the Scalable Fusion Architecture}
+
+We found that triplet-centric contexts have a significantly smaller footprint than paragraph-based RAG. Within our benchmark, GraphRAG required 65\%--75\% fewer tokens for evidence grounding. This reduction not only lowers operational costs but also eliminates ``positional degradation'' (the ``Lost in the Middle'' effect), further cementing our approach as a responsible and efficient AI framework \cite{liu2024lostmiddle}.
+
+%% ================================================================
+\section{Discussion: Regulatory Compliance and Trustworthy Fusion}
+\label{sec:discussion}
+%% ================================================================
+
+\subsection{Explanation in Analyst Processes}
+
+In our multi-source heterogeneous data fusion framework, we explicitly include a \texttt{source\_chunk} pointer for each generated claim. This ensures that the integration of unstructured text and structured triplets is a transparent process rather than an opaque one. Such a structure allows financial analysts and compliance officers to inspect and contest findings without needing deep technical knowledge of the underlying LLM. Establishing this provenance chain enables our architecture to provide the audit trails and model reviews that are critical for interpretable AI in finance \cite{ieeeeadd,kearns2019ethical}.
+
+\subsection{Alignment with SR~11-7 and GDPR}
+
+The SR~11-7 framework requires ``conceptual soundness'', rigorous monitoring, and the ability to challenge models effectively \cite{sr117}. Our deterministic retrieval strategy, featuring an explicit refusal gate, directly meets these requirements by making the retrieval logic observable and ensuring failure modes are not speculative. Additionally, our Triplet Atomicity approach aligns with GDPR's ``Right to Explanation'' and accountability mandates. By backing outputs with inspectable source documents instead of hidden, black-box reasoning, we maintain the system as a trustworthy and responsible AI framework \cite{gdpr,nistairmf,euaiact2024}.
+
+\subsection{Scalable Governance for High-Risk AI}
+
+As new governance requirements for automated financial analysis arise (e.g., EU AI Act), the demand for scalable and efficient fusion architectures expands \cite{euaiact2024,occaiprinciples,fcaai2024}. Our architecture responds to this need by combining robustness with accuracy through bounded path verification and triplet-level mapping. The system incorporates significant human oversight, using explicit refusal as a safety control. This ensures that ambiguous or unsupported cases are passed to human analysts rather than being generated stochastically.
+
+%% ================================================================
+\section{Threats to Validity}
+\label{sec:threats}
+%% ================================================================
+
+\subsection{Internal Validity}
+
+The primary internal threat involves the extraction fidelity during the knowledge graph construction phase. Since the Triplet Atomicity principle relies on LLM-driven parsing of raw SEC~10-K filings, any noise or incorrectly identified relations during ingestion could propagate throughout the graph. While we mitigate this risk by using low temperature settings ($T=0.1$) and a strict JSON output schema, the resulting ground truth is inevitably influenced by the linguistic biases of the extraction model. Furthermore, the Entity Resolution mechanism may occasionally fail to map nuanced textual mentions to their canonical anchors, potentially leading to false refusals even when the information is present in the source text.
+
+\subsection{External Validity}
+
+Our findings are primarily limited by the structured nature of SEC~10-K filings. While the Lexical GraphRAG architecture excels at parsing these highly regulated documents, its performance on informal financial data, such as earnings call transcripts or investor slide decks, remains to be validated. Additionally, the current 35-query benchmark, though covering four layers of complexity, represents a controlled environment. Real-world implementation in multi-national regulatory settings would introduce divergent linguistic variations across jurisdictions, which may challenge the current canonical entity resolution logic.
+
+\subsection{Construct Validity}
+
+The use of Recall@K as the main metric assumes that the annotated evidence chunks ($\mathcal{E}$) represent an exhaustive ground truth. However, in professional auditing, the definition of ``sufficient evidence'' is often subjective. Our metrics reflect a specific expert judgment regarding regulatory relevance; thus, the system's performance is intrinsically linked to the quality of human annotations. To address this in future evaluations, we recommend incorporating inter-annotator agreement (IAA) scores to ensure the robustness of the benchmark and minimise subjective bias.
+
+%% ================================================================
+\section{Future Work}
+\label{sec:future}
+%% ================================================================
+
+The proposed Lexical GraphRAG framework provides a robust baseline for deterministic retrieval, yet several high-priority research avenues remain to be explored.
+
+\subsection{Evolution of Temporal Knowledge Graphs}
+
+Financial compliance is inherently time-dependent, necessitating analysis across multiple fiscal years. Future work will extend the current architecture into Temporal Knowledge Graphs (TKG). This will involve developing reconciliation algorithms to resolve inconsistencies between historical 10-K filings and recent amendments, ensuring the provenance chain remains context-aware over time.
+
+\subsection{Neuro-Symbolic Verification Methods}
+
+To support the mandate of Zero Hallucination, we suggest combining formal verification methods with LLM-based extraction. By treating the knowledge graph as a symbolic state space, future iterations can utilise automated theorem provers to mathematically verify that generated responses are direct logical consequences of retrieved triplets. This neuro-symbolic strategy aims to move beyond probabilistic confidence toward absolute structural certainty and interpretability.
+
+\subsection{SLM Distillation for Scalable Extraction}
+
+The current reliance on frontier LLMs for Triplet Atomicity is computationally expensive. A promising research direction lies in distilling the knowledge produced by large-scale models into dedicated Small Language Models (SLMs) fine-tuned for financial entity-relation extraction. This approach can significantly reduce inference latency and operating costs, enhancing the scalability and efficiency of regulatory-grade applications.
+
+\subsection{Multi-Source Fusion with XBRL}
+
+Future iterations will incorporate XBRL (eXtensible Business Reporting Language) metadata directly into the graph architecture. Using standardised regulatory tags to anchor graph nodes will allow for a multi-source heterogeneous data fusion framework. This will unite the linguistic reasoning of LLMs with the deterministic numerical precision of standardised reporting, further bridging the gap between raw financial prose and auditable machine intelligence.
+
+%% ================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%% ================================================================
+
+This paper built up a multi-source heterogeneous data fusion framework using the Lexical GraphRAG architecture that satisfies the stringent zero-hallucination requirements to achieve financial accuracy. Through the systematic construction of Triplet Atomicity and the Deterministic Path Requirement, we argued for turning from probability-based paragraph retrieval to structured, path-driven traversal to achieve verifiable provenance and high interpretability. Our 35-query benchmark indicates that this architecture attains a 100\% execution success rate and high faithfulness (0.97) in addition to a computationally scalable mean latency of 18~seconds. This paper eventually demonstrates that structural determinism is a viable basis for a trustworthy and responsible AI framework, based in high-stakes FinTech contexts. Through a rigorous use of symbolic evidence, we introduce a defensible audit trail for regulatory-grade reporting by strictly constraining the LLM synthesis process. Future work will build on this fusion logic and create a neuro-symbolic system that integrates temporal knowledge graph reconciliation and XBRL-integrated schemas to combat the multi-fiscal year complexities of global financial ecosystems.
+
+%% ================================================================
+%%  Bibliography
+%% ================================================================
+\FloatBarrier
+% \clearpage
+\begin{thebibliography}{00}
+
+\bibitem{basel}
+Basel Committee on Banking Supervision, \textit{Basel III: A Global Regulatory Framework for More Resilient Banks and Banking Systems}, revised ed. Bank for International Settlements, Basel, 2011.
+
+\bibitem{gdpr}
+European Union, ``Regulation (EU) 2016/679 of the European Parliament and of the Council on the protection of natural persons with regard to the processing of personal data and on the free movement of such data (General Data Protection Regulation),'' \textit{Official Journal of the European Union}, L~119, pp.~1--88, 2016.
+
+\bibitem{sr117}
+Board of Governors of the Federal Reserve System, \textit{Supervisory Guidance on Model Risk Management (SR~11-7)}. Federal Reserve, Washington, DC, 2011.
+
+\bibitem{bcbs239}
+Basel Committee on Banking Supervision, \textit{Principles for Effective Risk Data Aggregation and Risk Reporting (BCBS~239)}. Bank for International Settlements, Basel, 2013.
+
+\bibitem{iso27001}
+ISO/IEC, ``ISO/IEC 27001:2022 -- Information Security, Cybersecurity and Privacy Protection -- Information Security Management Systems -- Requirements,'' International Organization for Standardization, Geneva, 2022.
+
+\bibitem{pci40}
+PCI Security Standards Council, ``Payment Card Industry Data Security Standard (PCI DSS) v4.0,'' PCI SSC, Wakefield, MA, 2022. [Online]. Available: \url{https://www.pcisecuritystandards.org/}
+
+\bibitem{lewis2020rag}
+P.~Lewis, E.~Perez, A.~Piktus, F.~Petroni, V.~Karpukhin, N.~Goyal, H.~K\"{u}ttler, M.~Lewis, W.-T.~Yih, T.~Rockt\"{a}schel, S.~Riedel, and D.~Kiela, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~33, pp.~9459--9474, 2020.
+
+\bibitem{karpukhin2020dpr}
+V.~Karpukhin, B.~Oguz, S.~Min, P.~Lewis, L.~Wu, S.~Edunov, D.~Chen, and W.-T.~Yih, ``Dense passage retrieval for open-domain question answering,'' in \textit{Proc.\ 2020 Conf.\ on Empirical Methods in Natural Language Processing (EMNLP)}, pp.~6769--6781, 2020.
+
+\bibitem{colbert2020}
+O.~Khattab and M.~Zaharia, ``ColBERT: Efficient and effective passage search via contextualized late interaction over BERT,'' in \textit{Proc.\ 43rd Intl.\ ACM SIGIR Conf.\ on Research and Development in Information Retrieval}, pp.~39--48, 2020.
+
+\bibitem{splade2021}
+T.~Formal, B.~Piwowarski, and S.~Clinchant, ``SPLADE v2: Sparse lexical and expansion model for information retrieval,'' arXiv preprint arXiv:2109.10086, 2021.
+
+\bibitem{atlas2022}
+G.~Izacard, P.~Lewis, M.~Lomeli, L.~Hosseini, F.~Petroni, T.~Schick, J.~Dwivedi-Yu, A.~Joulin, S.~Riedel, and E.~Grave, ``Few-shot learning with retrieval augmented language models,'' arXiv preprint arXiv:2208.03299, 2022.
+
+\bibitem{bender2021stochastic}
+E.~M.~Bender, T.~Gebru, A.~McMillan-Major, and S.~Shmitchell, ``On the dangers of stochastic parrots: Can language models be too big?,'' in \textit{Proc.\ 2021 ACM Conf.\ on Fairness, Accountability, and Transparency (FAccT)}, pp.~610--623, 2021.
+
+\bibitem{hyde2023}
+L.~Gao, X.~Ma, J.~Lin, and J.~Callan, ``Precise zero-shot dense retrieval without relevance labels,'' in \textit{Findings of the Association for Computational Linguistics (ACL)}, pp.~1762--1777, 2023.
+
+\bibitem{edge2024graphrag}
+D.~Edge, H.~Trinh, N.~Cheng, J.~Bradley, A.~Chao, A.~Mody, S.~Truitt, and J.~Larson, ``From local to global: A GraphRAG approach to query-focused summarization,'' arXiv preprint arXiv:2404.16130, 2024.
+
+\bibitem{attention2017}
+A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N.~Gomez, {\L}.~Kaiser, and I.~Polosukhin, ``Attention is all you need,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~30, pp.~5998--6008, 2017.
+
+\bibitem{bert2019}
+J.~Devlin, M.-W.~Chang, K.~Lee, and K.~Toutanova, ``BERT: Pre-training of deep bidirectional transformers for language understanding,'' in \textit{Proc.\ 2019 Conf.\ of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT)}, pp.~4171--4186, 2019.
+
+\bibitem{roberta2019}
+Y.~Liu, M.~Ott, N.~Goyal, J.~Du, M.~Joshi, D.~Chen, O.~Levy, M.~Lewis, L.~Zettlemoyer, and V.~Stoyanov, ``RoBERTa: A robustly optimized BERT pretraining approach,'' arXiv preprint arXiv:1907.11692, 2019.
+
+\bibitem{sbert2019}
+N.~Reimers and I.~Gurevych, ``Sentence-BERT: Sentence embeddings using Siamese BERT-networks,'' in \textit{Proc.\ 2019 Conf.\ on Empirical Methods in Natural Language Processing and the 9th Intl.\ Joint Conf.\ on Natural Language Processing (EMNLP-IJCNLP)}, pp.~3982--3992, 2019.
+
+\bibitem{t52020}
+C.~Raffel, N.~Shazeer, A.~Roberts, K.~Lee, S.~Narang, M.~Matena, Y.~Zhou, W.~Li, and P.~J.~Liu, ``Exploring the limits of transfer learning with a unified text-to-text transformer,'' \textit{Journal of Machine Learning Research}, vol.~21, no.~140, pp.~1--67, 2020.
+
+\bibitem{instructiontuning2022}
+J.~Wei, M.~Bosma, V.~Zhao, K.~Guu, A.~W.~Yu, B.~Lester, N.~Du, A.~M.~Dai, and Q.~V.~Le, ``Finetuned language models are zero-shot learners,'' in \textit{Proc.\ 10th Intl.\ Conf.\ on Learning Representations (ICLR)}, 2022.
+
+\bibitem{liu2024lostmiddle}
+N.~F.~Liu, K.~Lin, J.~Hewitt, A.~Paranjape, M.~Bevilacqua, F.~Petroni, and P.~Liang, ``Lost in the middle: How language models use long contexts,'' \textit{Transactions of the Association for Computational Linguistics}, vol.~12, pp.~157--173, 2024.
+
+\bibitem{truthfulqa2022}
+S.~Lin, J.~Hilton, and O.~Evans, ``TruthfulQA: Measuring how models mimic human falsehoods,'' in \textit{Proc.\ 60th Annual Meeting of the Association for Computational Linguistics (ACL)}, pp.~3214--3252, 2022.
+
+\bibitem{selfrag2023}
+A.~Asai, Z.~Wu, Y.~Wang, A.~Sil, and H.~Hajishirzi, ``Self-RAG: Learning to retrieve, generate, and critique through self-reflection,'' arXiv preprint arXiv:2310.11511, 2023.
+
+\bibitem{ragas2023}
+S.~Es, J.~James, L.~Espinosa-Anke, and S.~Schockaert, ``RAGAS: Automated evaluation of retrieval-augmented generation,'' arXiv preprint arXiv:2309.15217, 2023.
+
+\bibitem{hotpotqa2018}
+Z.~Yang, P.~Qi, S.~Zhang, Y.~Bengio, W.~W.~Cohen, R.~Salakhutdinov, and C.~D.~Manning, ``HotpotQA: A dataset for diverse, explainable multi-hop question answering,'' in \textit{Proc.\ 2018 Conf.\ on Empirical Methods in Natural Language Processing (EMNLP)}, pp.~2369--2380, 2018.
+
+\bibitem{fever2018}
+J.~Thorne, A.~Vlachos, C.~Christodoulopoulos, and A.~Mittal, ``FEVER: A large-scale dataset for fact extraction and verification,'' in \textit{Proc.\ 2018 Conf.\ of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT)}, pp.~809--819, 2018.
+
+\bibitem{msmarco2016}
+P.~Bajaj, D.~Campos, N.~Craswell, L.~Deng, J.~Fang, X.~Liu, R.~Majumder, A.~McNamara, B.~Mitra, T.~Nguyen, M.~Rosenberg, X.~Song, A.~Stoica, S.~Tiwary, and T.~Wang, ``MS MARCO: A human-generated machine reading comprehension dataset,'' arXiv preprint arXiv:1611.09268, 2016.
+
+\bibitem{trec2020}
+E.~M.~Voorhees and D.~Harman, \textit{TREC: Experiment and Evaluation in Information Retrieval}. MIT Press, Cambridge, MA, 2005.
+
+\bibitem{monoT52020}
+R.~Nogueira, Z.~Jiang, R.~Pradeep, and J.~Lin, ``Document ranking with a pretrained sequence-to-sequence model,'' in \textit{Findings of the Association for Computational Linguistics: EMNLP 2020}, pp.~708--718, 2020.
+
+\bibitem{rankgpt2023}
+W.~Sun, L.~Yan, X.~Ma, S.~Wang, P.~He, J.-R.~Wen, and P.~Bing, ``Is ChatGPT good at search? Investigating large language models as re-ranking agents,'' arXiv preprint arXiv:2304.09542, 2023.
+
+\bibitem{edgargraph}
+Y.~Wang, J.~Xu, and L.~Zhang, ``Constructing financial knowledge graphs from SEC filings for risk analytics,'' in \textit{Proc.\ IEEE Intl.\ Conf.\ on Big Data}, pp.~1548--1557, 2021.
+
+\bibitem{finkgsurvey}
+A.~Hogan, E.~Blomqvist, M.~Cochez, C.~d'Amato, G.~de Melo, C.~Gutierrez, S.~Kirrane, J.~E.~L.~Gayo, R.~Navigli, S.~Neumaier, A.-C.~N.~Ngomo, A.~Polleres, S.~M.~Rashid, A.~Rula, L.~Schmelzeisen, J.~Sequeda, S.~Staab, and A.~Zimmermann, ``Knowledge graphs,'' \textit{ACM Computing Surveys}, vol.~54, no.~4, pp.~1--37, 2021.
+
+\bibitem{opencyc2018}
+A.~K.~Singh, M.~Mohtarami, and P.~Nakov, ``Knowledge graphs in financial services: A review,'' \textit{IEEE Access}, vol.~8, pp.~71073--71088, 2020.
+
+\bibitem{finbert2020}
+D.~Araci, ``FinBERT: Financial sentiment analysis with pre-trained language models,'' arXiv preprint arXiv:1908.10063, 2019.
+
+\bibitem{neo4jmanual}
+Neo4j Inc., ``Neo4j documentation,'' [Online]. Available: \url{https://neo4j.com/docs/}. [Accessed: 01-Apr-2026].
+
+\bibitem{cypher2018}
+F.~Holzschuher and R.~Peinl, ``Performance of graph query languages: Comparison of Cypher, Gremlin and native access in Neo4j,'' in \textit{Proc.\ Joint EDBT/ICDT Workshops}, 2013.
+
+\bibitem{angles2018propertygraphs}
+R.~Angles, M.~Arenas, P.~Barcelo, A.~Hogan, J.~Reutter, and D.~Vrgoc, ``Foundations of modern query languages for graph databases,'' \textit{ACM Computing Surveys}, vol.~50, no.~5, pp.~1--40, 2018.
+
+\bibitem{robinson2015graphdb}
+I.~Robinson, J.~Webber, and E.~Eifrem, \textit{Graph Databases}, 2nd ed. O'Reilly Media, Sebastopol, CA, 2015.
+
+\bibitem{gpt4report}
+OpenAI, ``GPT-4 technical report,'' arXiv preprint arXiv:2303.08774, 2023.
+
+\bibitem{ieeeeadd}
+IEEE, \textit{Ethically Aligned Design: A Vision for Prioritizing Human Well-being with Autonomous and Intelligent Systems}, 1st ed. IEEE, Piscataway, NJ, 2019. [Online]. Available: \url{https://standards.ieee.org/industry-connections/ec/autonomous-systems/}
+
+\bibitem{kearns2019ethical}
+M.~Kearns and A.~Roth, \textit{The Ethical Algorithm: The Science of Socially Aware Algorithm Design}. Oxford University Press, New York, NY, 2019.
+
+\bibitem{nistairmf}
+National Institute of Standards and Technology, \textit{AI Risk Management Framework (AI RMF 1.0)}, NIST AI 100-1. U.S.\ Department of Commerce, Gaithersburg, MD, 2023. [Online]. Available: \url{https://doi.org/10.6028/NIST.AI.100-1}
+
+\bibitem{euaiact2024}
+European Parliament and Council of the European Union, ``Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act),'' \textit{Official Journal of the European Union}, L~2024/1689, 2024. [Online]. Available: \url{https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng}
+
+\bibitem{occaiprinciples}
+Office of the Comptroller of the Currency (OCC), Board of Governors of the Federal Reserve System, and Federal Deposit Insurance Corporation (FDIC), ``Principles for climate-related financial risk management for large financial institutions,'' OCC Bulletin 2023-33, Oct.\ 2023. [Online]. Available: \url{https://www.occ.gov/news-issuances/bulletins/2023/bulletin-2023-33.html}
+
+\bibitem{fcaai2024}
+Bank of England and Financial Conduct Authority, \textit{Artificial Intelligence in UK Financial Services -- 2024}. Bank of England, London, Nov.\ 2024. [Online]. Available: \url{https://www.bankofengland.co.uk/report/2024/artificial-intelligence-in-uk-financial-services-2024}
+
+\bibitem{sec10k}
+U.S.\ Securities and Exchange Commission, ``Form 10-K,'' [Online]. Available: \url{https://www.sec.gov/forms}. [Accessed: 01-Apr-2026].
+
+\bibitem{projectrepo}
+M.~H.~Siddiqui, ``Official implementation of Lexical GraphRAG: Multi-source heterogeneous data fusion for financial risk analytics,'' GitHub Repository, 2026. [Online]. Available: \url{https://github.com/HassanSidd0946/Lexical-GraphRAG-Finance}. [Accessed: 27-Apr-2026].
+
+\end{thebibliography}
+
+\end{document}
